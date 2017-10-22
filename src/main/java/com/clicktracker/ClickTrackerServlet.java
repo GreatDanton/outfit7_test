@@ -25,6 +25,7 @@ import java.util.List;
 import com.clicktracker.model.Admin;
 import com.clicktracker.model.Campaign;
 import com.clicktracker.model.Click;
+import com.google.gson.Gson;
 
 // Handling click tracking and redirecting users
 //
@@ -56,11 +57,6 @@ public class ClickTrackerServlet extends HttpServlet {
         }
 
         // requested campaign id does exist in db
-        // display redirect message before the user is redirected;
-        PrintWriter out = resp.getWriter();
-        out.print("Redirecting...");
-        out.flush();
-
         //  redirect to url stored in db
         resp.setStatus(HttpServletResponse.SC_SEE_OTHER);
         resp.sendRedirect(c.redirectURL);
@@ -90,7 +86,7 @@ public class ClickTrackerServlet extends HttpServlet {
         PrintWriter out = resp.getWriter();
         JSONObject returnJSON = new JSONObject();
         returnJSON.put("redirectURL", c.redirectURL);
-        out.print(returnJSON);
+        out.print(new Gson().toJson(returnJSON));
         out.flush();
     }
 
@@ -109,7 +105,7 @@ public class ClickTrackerServlet extends HttpServlet {
         PrintWriter out = resp.getWriter();
         JSONObject json = new JSONObject();
         json.put("message", "This campaign does not exist");
-        json.put("errorCode", 404);
+        json.put("statusCode", 404);
         out.print(json);
         out.flush();
     }

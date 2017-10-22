@@ -19,12 +19,17 @@ import com.googlecode.objectify.ObjectifyService;
 
 // custom imports
 import java.io.PrintWriter;
+import java.io.BufferedReader;
+
 import org.json.simple.JSONObject;
 import org.json.simple.JSONArray;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.Date;
 import com.clicktracker.model.Campaign;
 import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 
 //import javax.json.*;
 
@@ -44,8 +49,7 @@ public class AdminServlet extends HttpServlet {
     // Get request on admin pages returns informations about that campaign
     @Override
     public void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        // 1. check admin credentials
-        // 2. if everything is allright get campaign id
+        // TODO: 1. check admin credentials
 
         resp.setContentType("application/json");
         PrintWriter out = resp.getWriter();
@@ -55,7 +59,11 @@ public class AdminServlet extends HttpServlet {
         if (url.equals("all")) {
             List<Campaign> campaigns = ObjectifyService.ofy().load().type(Campaign.class).list();
             // push json array to client
-            String json = new Gson().toJson(campaigns);
+            JsonArray camp = new Gson().toJsonTree(campaigns).getAsJsonArray();
+            JsonObject wrapper = new JsonObject();
+            wrapper.add("campaigns:", camp);
+
+            String json = new Gson().toJson(wrapper);
             out.print(json);
             out.flush();
             return;
@@ -63,21 +71,98 @@ public class AdminServlet extends HttpServlet {
 
         // fetch data for only one campaign
         // campaignID is string, turning it into correct format for filtering
-        Long id = Long.parseLong(url);
-        Campaign c = ObjectifyService.ofy().load().type(Campaign.class).id(id).now();
-        if (c == null) { // campaign with such id does not exist, return error
-            // TODO: handle error
+        Long id = Utilities.getCampaignID(req);
+        // id could not be parsed from url
+        if (id == null) {
+            handleBadRequest(resp);
+            return;
         }
+
+        // get campaign entity from db
+        Campaign c = ObjectifyService.ofy().load().type(Campaign.class).id(id).now();
+        // campaign with such id does not exist, return error
+        if (c == null) {
+            handleNotFound(resp);
+            return;
+        }
+
+        // campaign with such id exist, display informations about campaign to admin
         String json = new Gson().toJson(c);
         out.print(json);
         out.flush();
     }
 
+    //
     // Post request on admin pages adds new campaign and returns ID of the
     // created campaign
     @Override
     public void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         resp.setContentType("application/json");
+        PrintWriter out = resp.getWriter();
+        // TODO: 1. check admin credentials
+
+        // parse parameters from post x-www-form-urlencoded
+        // if parameters are missing, return bad request (json)
+        String campaignName = req.getParameter("name");
+        if (campaignName == null) {
+            handleBadRequest(resp);
+            System.out.println("campaignName is null");
+            return;
+        }
+
+        String redirectURL = req.getParameter("redirectURL");
+        if (redirectURL == null) {
+            handleBadRequest(resp);
+            System.out.println("redirectURL is null");
+            return;
+        }
+
+        String paramActive = req.getParameter("active");
+        if (paramActive == null) {
+            handleBadRequest(resp);
+            return;
+        }
+
+        Boolean active = Boolean.parseBoolean(paramActive);
+        Date createdAt = new Date();
+
+        // if everything is all right save campaign to database
+        Campaign c = new Campaign(campaignName, redirectURL, active, createdAt);
+        ObjectifyService.ofy().save().entity(c).now();
+        Long cID = c.id;
+
+        // return created campaign id
+        JsonObject json = new JsonObject();
+        json.add("id", new Gson().toJsonTree(cID));
+        out.print(json);
+        out.flush();
+    }
+
+    // handles status code 404 not found: ex: campaign id does not exist in db
+    private void handleNotFound(HttpServletResponse resp) throws IOException {
+        PrintWriter out = resp.getWriter();
+        Gson gson = new Gson();
+
+        JsonObject msg = new JsonObject();
+        msg.add("statusCode", gson.toJsonTree(404));
+        msg.add("message", gson.toJsonTree("This campaign does not exist"));
+
+        out.print(new Gson().toJson(msg));
+        out.flush();
+    }
+
+    // handles status code 400 ex: campaign id could not be parsed from url
+    private void handleBadRequest(HttpServletResponse resp) throws IOException {
+        PrintWriter out = resp.getWriter();
+        resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+
+        Gson gson = new Gson();
+        JsonObject msg = new JsonObject();
+        msg.add("statusCode", gson.toJsonTree(400));
+        msg.add("message", gson.toJsonTree("Bad request"));
+
+        out.print(new Gson().toJson(msg));
+        out.flush();
     }
 
     // checkAuthenticaion checks if admin sent data are valid

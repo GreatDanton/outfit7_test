@@ -74,6 +74,14 @@
             <version>2.8.0</version>
         </dependency>
 
+<!-- imported apache IOUtils for reading post payload -->
+<!-- https://mvnrepository.com/artifact/commons-io/commons-io -->
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>2.5</version>
+        </dependency>
+
 
 
 <!-- [START Objectify_Dependencies] -->
