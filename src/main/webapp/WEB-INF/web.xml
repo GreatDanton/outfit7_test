@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app version="2.5" xmlns="http://java.sun.com/xml/ns/javaee"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd">
+
+<!-- [START standard_mappings] -->
+
+    <!-- Start of my own servlet mappings-->
+
+    <!-- Tracking pages -->
+    <servlet>
+      <servlet-name>tracker</servlet-name>
+      <servlet-class>com.clicktracker.ClickTrackerServlet</servlet-class>
+    </servlet>
+
+    <servlet-mapping>
+      <servlet-name>tracker</servlet-name>
+      <url-pattern>/api/v1/campaign/*</url-pattern>
+    </servlet-mapping>
+
+    <!--Admin pages -->
+    <servlet>
+      <servlet-name>admin-pages</servlet-name>
+      <servlet-class>com.clicktracker.AdminServlet</servlet-class>
+    </servlet>
+
+    <servlet-mapping>
+        <servlet-name>admin-pages</servlet-name>
+        <url-pattern>/api/v1/admin/campaign/*</url-pattern>
+    </servlet-mapping>
+    <!-- end of my own servlet mappings -->
+
+<!-- [START Objectify] -->
+    <filter>
+      <filter-name>ObjectifyFilter</filter-name>
+      <filter-class>com.googlecode.objectify.ObjectifyFilter</filter-class>
+    </filter>
+    <filter-mapping>
+      <filter-name>ObjectifyFilter</filter-name>
+      <url-pattern>/*</url-pattern>
+    </filter-mapping>
+    <listener>
+      <listener-class>com.clicktracker.OfyHelper</listener-class>
+    </listener>
+<!-- [END Objectify] -->
+</web-app>
