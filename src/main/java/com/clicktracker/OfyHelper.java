@@ -31,6 +31,11 @@ import com.clicktracker.model.Platform;
 import com.clicktracker.model.Click;
 import com.clicktracker.model.Admin;
 import java.util.Date;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.Properties;
 
 /**
  * OfyHelper, a ServletContextListener, is setup in web.xml to run before a JSP is run.  This is
@@ -71,13 +76,32 @@ public class OfyHelper implements ServletContextListener {
         // file, but I am not sure if GAE supports reading & writing to file system
         // so we are stuck with redeploying the whole app for each admin password change
         if (ad == null) {
-            String pass = "outfit7$Test321";
+            String adminName = "";
+            String adminPass = "";
+
+            // read config file
+            try {
+                File configFile = new File("WEB-INF/config.properties");
+                FileReader reader = new FileReader(configFile);
+                Properties props = new Properties();
+                props.load(reader);
+                adminName = props.getProperty("adminName");
+                adminPass = props.getProperty("password");
+            } catch (FileNotFoundException ex) {
+                System.out.println("config.properties: file not found");
+                ex.printStackTrace();
+                System.exit(0);
+            } catch (IOException ex) {
+                ex.printStackTrace();
+                System.exit(0);
+            }
+
             // random salt for bcrypt
             String salt = BCrypt.gensalt();
-            String passHash = BCrypt.hashpw(pass, salt);
+            String passHash = BCrypt.hashpw(adminPass, salt);
 
             // save admin to admin table
-            Admin admin = new Admin("Admin", passHash, true);
+            Admin admin = new Admin(adminName, passHash, true);
             ObjectifyService.ofy().save().entity(admin).now();
         }
     }

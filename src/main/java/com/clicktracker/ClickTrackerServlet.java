@@ -1,14 +1,5 @@
 package com.clicktracker;
 
-import com.google.appengine.api.datastore.DatastoreService;
-import com.google.appengine.api.datastore.DatastoreServiceFactory;
-import com.google.appengine.api.datastore.Entity;
-import com.google.appengine.api.datastore.Key;
-import com.google.appengine.api.datastore.KeyFactory;
-import com.google.appengine.api.users.User;
-import com.google.appengine.api.users.UserService;
-import com.google.appengine.api.users.UserServiceFactory;
-
 import java.io.IOException;
 import java.util.Date;
 
@@ -20,12 +11,13 @@ import com.googlecode.objectify.ObjectifyService;
 
 // custom imports
 import java.io.PrintWriter;
-import org.json.simple.JSONObject;
 import java.util.List;
+import java.util.StringTokenizer;
 import com.clicktracker.model.Admin;
 import com.clicktracker.model.Campaign;
 import com.clicktracker.model.Click;
 import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 
 // Handling click tracking and redirecting users
 //
@@ -56,7 +48,9 @@ public class ClickTrackerServlet extends HttpServlet {
             return;
         }
 
-        // requested campaign id does exist in db
+        // store client click in db
+        storeClick(req);
+
         //  redirect to url stored in db
         resp.setStatus(HttpServletResponse.SC_SEE_OTHER);
         resp.sendRedirect(c.redirectURL);
@@ -79,14 +73,17 @@ public class ClickTrackerServlet extends HttpServlet {
             return;
         }
 
-        // Campaign exists in db, return redirectURL
+        // campaign exists in db, store client click into db
+        storeClick(req);
+
+        // return redirectURL
         resp.setContentType("application/json");
         resp.setStatus(HttpServletResponse.SC_OK);
 
         PrintWriter out = resp.getWriter();
-        JSONObject returnJSON = new JSONObject();
-        returnJSON.put("redirectURL", c.redirectURL);
-        out.print(new Gson().toJson(returnJSON));
+        JsonObject json = new JsonObject();
+        json.add("redirectURL", new Gson().toJsonTree(c.redirectURL));
+        out.print(json);
         out.flush();
     }
 
@@ -103,9 +100,10 @@ public class ClickTrackerServlet extends HttpServlet {
         resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
 
         PrintWriter out = resp.getWriter();
-        JSONObject json = new JSONObject();
-        json.put("message", "This campaign does not exist");
-        json.put("statusCode", 404);
+        JsonObject json = new JsonObject();
+        Gson gson = new Gson();
+        json.add("message", gson.toJsonTree("This campaign does not exist"));
+        json.add("statusCode", gson.toJsonTree(404));
         out.print(json);
         out.flush();
     }
@@ -126,14 +124,13 @@ public class ClickTrackerServlet extends HttpServlet {
         String xfwh = req.getHeader("X-Forwarded-For");
         if (xfwh == null) {
             clientIP = req.getRemoteAddr();
-            System.out.println("XFWH == NULL");
-            System.out.println(clientIP);
+        } else {
+            clientIP = new StringTokenizer(xfwh, ",").nextToken().trim();
         }
-        System.out.println(xfwh);
 
         // store click info to database
         Click click = new Click(campaignID, clientIP, userAgent, date);
-        ObjectifyService.ofy().save().entity(click).now();
+        ObjectifyService.ofy().save().entity(click);
     }
 
     // getCampaign returns campaign object with chosen campaignID
