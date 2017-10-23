@@ -22,11 +22,8 @@ public class Utilities {
     // is not possible
     public static Long getCampaignID(HttpServletRequest req) throws IOException {
         String urlString = getURLEnding(req);
-        if (StringUtils.isNumeric(urlString)) {
-            Long id = Long.parseLong(urlString);
-            return id;
-        }
-        return null;
+        Long id = stringToLong(urlString);
+        return id;
     }
 
     // turn string to Long num if that is possible, otherwise returns null

@@ -8,6 +8,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.googlecode.objectify.ObjectifyService;
+import com.googlecode.objectify.VoidWork;
 
 // custom imports
 import java.io.PrintWriter;
@@ -16,6 +17,7 @@ import java.util.StringTokenizer;
 import com.clicktracker.model.Admin;
 import com.clicktracker.model.Campaign;
 import com.clicktracker.model.Click;
+import com.clicktracker.model.Counter;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 
@@ -104,6 +106,7 @@ public class ClickTrackerServlet extends HttpServlet {
         Gson gson = new Gson();
         json.add("message", gson.toJsonTree("This campaign does not exist"));
         json.add("statusCode", gson.toJsonTree(404));
+        json.add("redirectURL", gson.toJsonTree(mainWebsite));
         out.print(json);
         out.flush();
     }
@@ -111,7 +114,7 @@ public class ClickTrackerServlet extends HttpServlet {
     // storeClick is helper function for storing click request
     // into database
     private void storeClick(HttpServletRequest req) throws IOException {
-        Long campaignID = Utilities.getCampaignID(req);
+        final Long campaignID = Utilities.getCampaignID(req);
         if (campaignID == null) {
             return;
         }
@@ -128,9 +131,44 @@ public class ClickTrackerServlet extends HttpServlet {
             clientIP = new StringTokenizer(xfwh, ",").nextToken().trim();
         }
 
-        // store click info to database
-        Click click = new Click(campaignID, clientIP, userAgent, date);
-        ObjectifyService.ofy().save().entity(click);
+        clickTransaction(campaignID, clientIP, userAgent, date);
+
+    }
+
+    // clickTransaction contains transaction of storing click to click table and
+    // updating counter from counter table
+    private void clickTransaction(Long campaignID, String clientIP, String userAgent, Date date) {
+        final Long CampaignID = campaignID;
+        final String ClientIP = clientIP;
+        final String UserAgent = userAgent;
+        final Date Date = date;
+
+        // store number of clicks into counter table
+        ObjectifyService.ofy().transact(new VoidWork() {
+            public void vrun() {
+                // store click info to database
+                Click click = new Click(CampaignID, ClientIP, UserAgent, Date);
+                ObjectifyService.ofy().save().entity(click);
+
+                // add counter to counter table (GAE does not support PUT, so we have
+                // to delete old row and insert new counter row)
+                Counter counter = ObjectifyService.ofy().load().type(Counter.class).filter("campaignID", CampaignID)
+                        .first().now();
+                // if counter row does not exist add new row (that way we do not have
+                // to insert new counter on each campaign insert)
+                if (counter == null) {
+                    Counter newCounter = new Counter(CampaignID, 0L);
+                    ObjectifyService.ofy().save().entity(newCounter);
+                    return;
+                }
+                // counter already exists, add one to numOfClick, insert new row
+                // and delete old counter row
+                Long num = counter.numOfClicks + 1;
+                Counter newCounter = new Counter(CampaignID, num);
+                ObjectifyService.ofy().save().entity(newCounter);
+                ObjectifyService.ofy().delete().entity(counter);
+            }
+        });
     }
 
     // getCampaign returns campaign object with chosen campaignID

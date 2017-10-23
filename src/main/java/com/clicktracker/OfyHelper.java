@@ -29,6 +29,7 @@ import org.mindrot.jbcrypt.BCrypt;
 import com.clicktracker.model.Campaign;
 import com.clicktracker.model.Platform;
 import com.clicktracker.model.Click;
+import com.clicktracker.model.Counter;
 import com.clicktracker.model.Admin;
 import java.util.Date;
 import java.util.List;
@@ -52,6 +53,7 @@ public class OfyHelper implements ServletContextListener {
         ObjectifyService.register(Platform.class);
         ObjectifyService.register(Click.class);
         ObjectifyService.register(Admin.class);
+        ObjectifyService.register(Counter.class);
 
         ObjectifyService.begin();
 
@@ -109,6 +111,8 @@ public class OfyHelper implements ServletContextListener {
     // createCampaign creates first campaign in the database,
     // if no other campaign exist
     private void createCampaign() {
+        System.out.println("#### Creating Campaign ####");
+
         Campaign c = ObjectifyService.ofy().load().type(Campaign.class).first().now();
         // if campaign does not exist in the database
         if (c == null) {
@@ -134,16 +138,23 @@ public class OfyHelper implements ServletContextListener {
             p1.add(android.id);
             Campaign campaign = new Campaign(name, url, p1, active, date);
             ObjectifyService.ofy().save().entity(campaign).now();
+
+            // each campaign should have it's own counter (even though counter is
+            // inserted in counter table on first click request of the new campaign
+            // we are still manually adding it now; two rows below could be deleted)
+            Counter counter = new Counter(campaign.id, 0L);
+            ObjectifyService.ofy().save().entity(counter).now();
         }
     }
 
+    // create iphone, android rows in platforms table
     private void createPlatforms() {
         System.out.println("#### Add platforms to db ####");
         List<Platform> p = ObjectifyService.ofy().load().type(Platform.class).list();
         // If there is no platform in the db, add two
         if (p.size() < 1) {
-            Platform p1 = new Platform("Iphone");
-            Platform p2 = new Platform("Android");
+            Platform p1 = new Platform("iphone");
+            Platform p2 = new Platform("android");
             ObjectifyService.ofy().save().entity(p1).now();
             ObjectifyService.ofy().save().entity(p2).now();
         }

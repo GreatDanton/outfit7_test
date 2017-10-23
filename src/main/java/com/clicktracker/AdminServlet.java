@@ -28,9 +28,13 @@ import java.util.stream.Collectors;
 import java.util.Date;
 import com.clicktracker.model.Campaign;
 import com.clicktracker.model.Platform;
+import com.clicktracker.model.Click;
+import com.clicktracker.model.Counter;
+
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonElement;
 
 //import javax.json.*;
 
@@ -89,17 +93,21 @@ public class AdminServlet extends HttpServlet {
         }
 
         // get campaign entity from db
-        Campaign c = ObjectifyService.ofy().load().type(Campaign.class).id(id).now();
+        Campaign campaign = ObjectifyService.ofy().load().type(Campaign.class).id(id).now();
         // campaign with such id does not exist, return 404
-        if (c == null) {
+        if (campaign == null) {
             handleNotFound(resp);
             return;
         }
 
+        Counter counter = ObjectifyService.ofy().load().type(Counter.class).filter("campaignID", id).first().now();
+        Long clicks = counter.numOfClicks;
         // campaign with such id exist, display informations about campaign to admin
         resp.setStatus(HttpServletResponse.SC_OK);
-        String json = new Gson().toJson(c);
-        out.print(json);
+        Gson gson = new Gson();
+        JsonElement jsonEl = gson.toJsonTree(campaign);
+        jsonEl.getAsJsonObject().addProperty("clicks", clicks);
+        out.print(gson.toJson(jsonEl));
         out.flush();
     }
 
