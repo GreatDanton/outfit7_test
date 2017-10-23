@@ -9,6 +9,7 @@ import com.googlecode.objectify.annotation.Cache;
 
 // custom imports
 import java.util.Date;
+import java.util.List;
 
 // Create table for storing campaigns
 @Entity
@@ -25,15 +26,17 @@ public class Campaign {
 
     // an easy way to disable campaign links without deleting all content
     // from the database
+    public List<Long> platforms;
     public Boolean active;
     public Date createdAt;
 
     public Campaign() {
     }
 
-    public Campaign(String name, String redirectURL, Boolean active, Date createdAt) {
+    public Campaign(String name, String redirectURL, List<Long> platforms, Boolean active, Date createdAt) {
         this.name = name;
         this.redirectURL = redirectURL;
+        this.platforms = platforms;
         this.active = active;
         this.createdAt = createdAt;
     }

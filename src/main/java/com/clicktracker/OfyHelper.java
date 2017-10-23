@@ -31,6 +31,8 @@ import com.clicktracker.model.Platform;
 import com.clicktracker.model.Click;
 import com.clicktracker.model.Admin;
 import java.util.Date;
+import java.util.List;
+import java.util.ArrayList;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileNotFoundException;
@@ -54,6 +56,7 @@ public class OfyHelper implements ServletContextListener {
         ObjectifyService.begin();
 
         registerAdmin();
+        createPlatforms();
         createCampaign();
     }
 
@@ -112,12 +115,31 @@ public class OfyHelper implements ServletContextListener {
         Campaign c = ObjectifyService.ofy().load().type(Campaign.class).first().now();
         // if campaign does not exist in the database
         if (c == null) {
+            Platform iphone = ObjectifyService.ofy().load().type(Platform.class).filter("name", "Iphone").first().now();
+            Platform android = ObjectifyService.ofy().load().type(Platform.class).filter("name", "Android").first()
+                    .now();
+
             String name = "My first campaign";
             String url = "http://www.google.com";
             Boolean active = true;
             Date date = new Date();
-            Campaign campaign = new Campaign(name, url, active, date);
+            List<Long> p1 = new ArrayList<Long>();
+            p1.add(iphone.id);
+            p1.add(android.id);
+            Campaign campaign = new Campaign(name, url, p1, active, date);
             ObjectifyService.ofy().save().entity(campaign).now();
+        }
+    }
+
+    private void createPlatforms() {
+        System.out.println("#### Add platforms to db ####");
+        List<Platform> p = ObjectifyService.ofy().load().type(Platform.class).list();
+        // If there is no platform in the db, add two
+        if (p.size() < 1) {
+            Platform p1 = new Platform("Iphone");
+            Platform p2 = new Platform("Android");
+            ObjectifyService.ofy().save().entity(p1).now();
+            ObjectifyService.ofy().save().entity(p2).now();
         }
     }
 

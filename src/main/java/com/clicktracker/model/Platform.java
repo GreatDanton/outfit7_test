@@ -12,6 +12,14 @@ import com.googlecode.objectify.annotation.Parent;
 public class Platform {
     @Index
     @Id
-    public long id;
+    public Long id;
+    @Index
     public String name; // platform name
+
+    public Platform() {
+    }
+
+    public Platform(String name) {
+        this.name = name;
+    }
 }

@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.Date;
 import com.clicktracker.model.Campaign;
+import com.clicktracker.model.Platform;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
@@ -101,7 +102,7 @@ public class AdminServlet extends HttpServlet {
         PrintWriter out = resp.getWriter();
         // TODO: 1. check admin credentials
 
-        // parse parameters from post x-www-form-urlencoded
+        // parse parameters from POST request
         // if parameters are missing, return bad request (json)
         String campaignName = req.getParameter("name");
         if (campaignName == null) {
@@ -122,12 +123,19 @@ public class AdminServlet extends HttpServlet {
             handleBadRequest(resp);
             return;
         }
+        String plat = req.getParameter("platform");
+        if (plat == null) {
+            handleBadRequest(resp);
+            return;
+        }
+
+        List<Long> platforms = Utilities.getPlatforms(plat);
 
         Boolean active = Boolean.parseBoolean(paramActive);
         Date createdAt = new Date();
 
         // if everything is all right save campaign to database
-        Campaign c = new Campaign(campaignName, redirectURL, active, createdAt);
+        Campaign c = new Campaign(campaignName, redirectURL, platforms, active, createdAt);
         ObjectifyService.ofy().save().entity(c).now();
         Long cID = c.id;
 
@@ -151,7 +159,7 @@ public class AdminServlet extends HttpServlet {
             return;
         }
 
-        // TODO: check if campaign id actually exist
+        // check if campaign id actually exist
         Campaign c = ObjectifyService.ofy().load().type(Campaign.class).id(campaignID).now();
         if (c == null) {
             handleNotFound(resp);
@@ -163,7 +171,7 @@ public class AdminServlet extends HttpServlet {
         ObjectifyService.ofy().delete().type(Campaign.class).id(campaignID).now();
     }
 
-    // option to
+    // handling campaign updates
     @Override
     public void doPut(HttpServletRequest req, HttpServletResponse resp) throws IOException {
 
