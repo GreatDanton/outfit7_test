@@ -67,9 +67,19 @@ public class AdminServlet extends HttpServlet {
             out.print(json);
             out.flush();
             return;
+            // admin/campaign/platforms => display all available platforms
+        } else if (url.equals("platforms")) {
+            List<Platform> platforms = ObjectifyService.ofy().load().type(Platform.class).list();
+            resp.setStatus(HttpServletResponse.SC_OK);
+            JsonArray platf = new Gson().toJsonTree(platforms).getAsJsonArray();
+            JsonObject wrapper = new JsonObject();
+            wrapper.add("platforms:", platf);
+            out.print(wrapper);
+            out.flush();
+            return;
         }
 
-        // fetch data for only one campaign
+        // fetch data about campaign with id parsed from url
         // campaignID is string, turning it into correct format for filtering
         Long id = Utilities.getCampaignID(req);
         // id could not be parsed from url

@@ -69,15 +69,12 @@ public class OfyHelper implements ServletContextListener {
         // .... I believe this is not in the scope of this project/test so I am
         // staying with only one admin for now.
         //
-        System.out.println("######### APPLICATION WARMUP ##########");
+        System.out.println("######### APPLICATION SETUP ##########");
 
         Admin ad = ObjectifyService.ofy().load().type(Admin.class).first().now();
         System.out.println(ad);
 
         // If admin does not exist create one
-        // .... EXTRA NOTE: the proper way of creating new admin would be via configuration
-        // file, but I am not sure if GAE supports reading & writing to file system
-        // so we are stuck with redeploying the whole app for each admin password change
         if (ad == null) {
             String adminName = "";
             String adminPass = "";
@@ -115,9 +112,18 @@ public class OfyHelper implements ServletContextListener {
         Campaign c = ObjectifyService.ofy().load().type(Campaign.class).first().now();
         // if campaign does not exist in the database
         if (c == null) {
-            Platform iphone = ObjectifyService.ofy().load().type(Platform.class).filter("name", "Iphone").first().now();
-            Platform android = ObjectifyService.ofy().load().type(Platform.class).filter("name", "Android").first()
+            Platform iphone = ObjectifyService.ofy().load().type(Platform.class).filter("name", "iphone").first().now();
+            Platform android = ObjectifyService.ofy().load().type(Platform.class).filter("name", "android").first()
                     .now();
+
+            if (iphone == null) {
+                System.out.println("iphone does not exist in platform db");
+                System.exit(0);
+            }
+            if (android == null) {
+                System.out.println("android does not exist in platform db");
+                System.exit(0);
+            }
 
             String name = "My first campaign";
             String url = "http://www.google.com";

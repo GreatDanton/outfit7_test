@@ -38,15 +38,40 @@ public class Utilities {
         return null;
     }
 
+    // getPlatforms handles parsing platform ids or names from the url query. Admin
+    // is able to provide:
+    // - whole id of the platform (ex: 5066549580791808,6192449487634432) or
+    // - name of the platform (ex: "iphone, android")
     //
+    // both inputs are checked against the database to ensure the input data is valid
     public static List<Long> getPlatforms(String platformsString) throws IOException {
         String[] platforms = platformsString.split(",");
         List<Long> platformIDS = new ArrayList<Long>();
         for (String platform : platforms) {
-            platform = platform.trim();
-            Platform p = ObjectifyService.ofy().load().type(Platform.class).filter("name", platform).first().now();
-            platformIDS.add(p.id);
+            platform = platform.trim().toLowerCase();
+            // if platform is num admin provided platforms as string of platform ids
+            Long id = stringToLong(platform);
+            if (id != null) {
+                Platform p = ObjectifyService.ofy().load().type(Platform.class).id(platform).now();
+                // check if platform actually exist in database
+                if (p != null) {
+                    platformIDS.add(p.id);
+                }
+
+                // admin used platform names in query: platforms="iphone, android";
+            } else {
+                Platform p = ObjectifyService.ofy().load().type(Platform.class).filter("name", platform).first().now();
+                // check if platform exist in db
+                if (p != null) {
+                    platformIDS.add(p.id);
+                }
+            }
         }
-        return platformIDS;
+
+        if (platformIDS.size() > 0) {
+            return platformIDS;
+        } else { // if platform ids are not valid (do not exist in db)
+            return null;
+        }
     }
 }

@@ -21,12 +21,10 @@ public class Campaign {
 
     public String name;
     public String redirectURL;
-    // add platforms_id as a string or
-    // just add one row for each id
 
-    // an easy way to disable campaign links without deleting all content
-    // from the database
     public List<Long> platforms;
+    // active field => an easy way to disable campaign links without deleting
+    // campaign from the database
     public Boolean active;
     public Date createdAt;
 
