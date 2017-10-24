@@ -52,8 +52,8 @@ public class OfyHelper implements ServletContextListener {
         ObjectifyService.register(Campaign.class);
         ObjectifyService.register(Platform.class);
         ObjectifyService.register(Click.class);
-        ObjectifyService.register(Admin.class);
         ObjectifyService.register(Counter.class);
+        ObjectifyService.register(Admin.class);
 
         ObjectifyService.begin();
 
@@ -138,12 +138,6 @@ public class OfyHelper implements ServletContextListener {
             p1.add(android.id);
             Campaign campaign = new Campaign(name, url, p1, active, date);
             ObjectifyService.ofy().save().entity(campaign).now();
-
-            // each campaign should have it's own counter (even though counter is
-            // inserted in counter table on first click request of the new campaign
-            // we are still manually adding it now; two rows below could be deleted)
-            Counter counter = new Counter(campaign.id, 0L);
-            ObjectifyService.ofy().save().entity(counter).now();
         }
     }
 

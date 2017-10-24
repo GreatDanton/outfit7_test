@@ -131,44 +131,34 @@ public class ClickTrackerServlet extends HttpServlet {
             clientIP = new StringTokenizer(xfwh, ",").nextToken().trim();
         }
 
-        clickTransaction(campaignID, clientIP, userAgent, date);
+        // TODO: Code bellow should be handled inside transaction
+        // ex: if one of the db actions fail the whole transaction should fail
+        // as well. So far I couldn't figure out how to build a transaction with
+        // GAE datastore so I am leaving it like that for now.
 
-    }
+        // store click info to database
+        Click click = new Click(campaignID, clientIP, userAgent, date);
+        ObjectifyService.ofy().save().entity(click);
 
-    // clickTransaction contains transaction of storing click to click table and
-    // updating counter from counter table
-    private void clickTransaction(Long campaignID, String clientIP, String userAgent, Date date) {
-        final Long CampaignID = campaignID;
-        final String ClientIP = clientIP;
-        final String UserAgent = userAgent;
-        final Date Date = date;
+        // add counter to counter table (GAE does not support PUT, so we have
+        // to delete old row and insert new counter row)
+        Counter counter = ObjectifyService.ofy().load().type(Counter.class).filter("campaignID", campaignID).first()
+                .now();
 
-        // store number of clicks into counter table
-        ObjectifyService.ofy().transact(new VoidWork() {
-            public void vrun() {
-                // store click info to database
-                Click click = new Click(CampaignID, ClientIP, UserAgent, Date);
-                ObjectifyService.ofy().save().entity(click);
+        // if counter row does not exist add new row (that way we do not have
+        // to insert new counter on each campaign insert)
+        if (counter == null) {
+            Counter newCounter = new Counter(campaignID, 0L);
+            ObjectifyService.ofy().save().entity(newCounter);
+            return;
+        }
 
-                // add counter to counter table (GAE does not support PUT, so we have
-                // to delete old row and insert new counter row)
-                Counter counter = ObjectifyService.ofy().load().type(Counter.class).filter("campaignID", CampaignID)
-                        .first().now();
-                // if counter row does not exist add new row (that way we do not have
-                // to insert new counter on each campaign insert)
-                if (counter == null) {
-                    Counter newCounter = new Counter(CampaignID, 0L);
-                    ObjectifyService.ofy().save().entity(newCounter);
-                    return;
-                }
-                // counter already exists, add one to numOfClick, insert new row
-                // and delete old counter row
-                Long num = counter.numOfClicks + 1;
-                Counter newCounter = new Counter(CampaignID, num);
-                ObjectifyService.ofy().save().entity(newCounter);
-                ObjectifyService.ofy().delete().entity(counter);
-            }
-        });
+        // counter already exists, add one to numOfClick, insert new row
+        // and delete old counter row
+        Long num = counter.numOfClicks + 1;
+        Counter newCounter = new Counter(campaignID, num);
+        ObjectifyService.ofy().save().entity(newCounter);
+        ObjectifyService.ofy().delete().entity(counter);
     }
 
     // getCampaign returns campaign object with chosen campaignID

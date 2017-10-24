@@ -6,6 +6,7 @@ import java.util.Date;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
 import com.googlecode.objectify.ObjectifyService;
 import com.googlecode.objectify.VoidWork;
@@ -32,56 +33,93 @@ public class AdminAuthServlet extends HttpServlet {
     public void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         final String url = Utilities.getURLEnding(req);
         PrintWriter out = resp.getWriter();
-        System.out.println(req.getSession());
         resp.setContentType("application/json");
 
+        // handling login
         if (url.equals("login")) {
-            Boolean ok = credentialsCheck(req, resp);
-            if (!ok) {
+            Credentials credentials = credentialsCheck(req, resp);
+            if (!credentials.ok) {
                 handleBadRequest(resp);
                 return;
             }
-            // TODO:
-            // 1. set up cookie && create session in the database
-            // return htto
 
+            HttpSession session = req.getSession(true);
+            Object userID = session.getAttribute("userID");
+            if (userID == null) { // userID does not exist
+                session.setAttribute("userID", credentials.adminId);
+            }
+            session.setMaxInactiveInterval(24 * 60 * 60);
+
+            // return success msg to client
             resp.setStatus(HttpServletResponse.SC_OK);
-            out.print(new Gson().toJson(url));
+            JsonObject json = new JsonObject();
+            json.add("message", new Gson().toJsonTree("Successfully logged in"));
+            out.print(json);
+            out.flush();
+            return;
+
+            // handling logout
+        } else if (url.equals("logout")) {
+            resp.setContentType("application/json");
+            HttpSession session = req.getSession(false);
+            if (session == null) {
+                handleBadRequest(resp);
+                return;
+            }
+
+            session.invalidate();
+            resp.setStatus(HttpServletResponse.SC_OK);
+            JsonObject json = new JsonObject();
+            json.add("message", new Gson().toJsonTree("Successfully logged out"));
+            out.print(json);
             out.flush();
             return;
         }
     }
 
+    // class for returning admin id and credentials bool from function
+    final class Credentials {
+        Long adminId;
+        Boolean ok;
+
+        public Credentials(Long adminId, Boolean ok) {
+            this.adminId = adminId;
+            this.ok = ok;
+        }
+    }
+
     // check admin credentials against credentials stored in the database
-    public Boolean credentialsCheck(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+    public Credentials credentialsCheck(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String name = req.getParameter("name");
+        Credentials credentialsFail = new Credentials(0L, false);
+
         if (name == null) {
-            return false;
+            return credentialsFail;
         }
         String pass = req.getParameter("password");
         if (pass == null) {
-            return false;
+            return credentialsFail;
         }
 
         // name and password are present, check in db for match
         Admin admin = ObjectifyService.ofy().load().type(Admin.class).filter("name", name).first().now();
         if (admin == null) { // admin does not exist
-            return false;
+            return credentialsFail;
         }
         if (!admin.active) { // admin is not active
-            return false;
+            return credentialsFail;
         }
         if (!admin.name.equals(name)) { // names do not match
-            return false;
+            return credentialsFail;
         }
 
         Boolean passHash = BCrypt.checkpw(pass, admin.password);
         if (!passHash) { // passwords do not match
-            return false;
+            return credentialsFail;
         }
 
         // sent credentials match to those in db; everything is ok.
-        return true;
+        return new Credentials(admin.id, true);
     }
 
     // handleBadRequest is helper function that returns bad request in json object

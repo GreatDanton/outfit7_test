@@ -1,32 +1,19 @@
 package com.clicktracker;
 
-import com.google.appengine.api.datastore.DatastoreService;
-import com.google.appengine.api.datastore.DatastoreServiceFactory;
-import com.google.appengine.api.datastore.Entity;
-import com.google.appengine.api.datastore.Key;
-import com.google.appengine.api.datastore.KeyFactory;
-import com.google.appengine.api.users.User;
-import com.google.appengine.api.users.UserService;
-import com.google.appengine.api.users.UserServiceFactory;
-
 import java.io.IOException;
-
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
+import javax.servlet.http.HttpSession;
 import com.googlecode.objectify.ObjectifyService;
 
 // custom imports
 import java.io.PrintWriter;
-import java.io.BufferedReader;
-
-import org.json.simple.JSONObject;
-import org.json.simple.JSONArray;
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.Date;
+
 import com.clicktracker.model.Campaign;
+import com.clicktracker.model.Admin;
 import com.clicktracker.model.Platform;
 import com.clicktracker.model.Click;
 import com.clicktracker.model.Counter;
@@ -41,7 +28,7 @@ import com.google.gson.JsonElement;
 // AdminServlet handles admin pages => adding, deleting, updating and getting
 // info about campaigns.
 // We can access admin pages via
-// /api/v1/admin/campaign/{campaignID}
+// /api/v1/admin/campaign/{campaignID/all/platform}
 //
 // Actions are executed depending on the type of request:
 // GET: get additional info about campaigns
@@ -54,32 +41,23 @@ public class AdminServlet extends HttpServlet {
     // Get request on admin pages returns informations about that campaign
     @Override
     public void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        // TODO: 1. check admin credentials
         resp.setContentType("application/json");
         PrintWriter out = resp.getWriter();
+
+        // check if admin is logged in
+        Boolean ok = checkCredentials(req);
+        if (!ok) {
+            handleForbidden(resp);
+            return;
+        }
+
         String url = Utilities.getURLEnding(req);
 
-        // if campaignID == all, fetch data about all campaigns
-        if (url.equals("all")) {
-            List<Campaign> campaigns = ObjectifyService.ofy().load().type(Campaign.class).list();
-            // push json array to client
-            resp.setStatus(HttpServletResponse.SC_OK);
-            JsonArray camp = new Gson().toJsonTree(campaigns).getAsJsonArray();
-            JsonObject wrapper = new JsonObject();
-            wrapper.add("campaigns:", camp);
-            String json = new Gson().toJson(wrapper);
-            out.print(json);
-            out.flush();
+        if (url.equals("all")) { // display all campaigns
+            displayAllCampaigns(req, resp);
             return;
-            // admin/campaign/platforms => display all available platforms
-        } else if (url.equals("platforms")) {
-            List<Platform> platforms = ObjectifyService.ofy().load().type(Platform.class).list();
-            resp.setStatus(HttpServletResponse.SC_OK);
-            JsonArray platf = new Gson().toJsonTree(platforms).getAsJsonArray();
-            JsonObject wrapper = new JsonObject();
-            wrapper.add("platforms:", platf);
-            out.print(wrapper);
-            out.flush();
+        } else if (url.equals("platforms")) { // display all platforms
+            displayAllPlatforms(req, resp);
             return;
         }
 
@@ -88,7 +66,8 @@ public class AdminServlet extends HttpServlet {
         Long id = Utilities.getCampaignID(req);
         // id could not be parsed from url
         if (id == null) {
-            handleBadRequest(resp);
+            String msg = String.format("campaign with id %s does not exist", String.valueOf(id));
+            handleBadRequest(resp, msg);
             return;
         }
 
@@ -101,7 +80,11 @@ public class AdminServlet extends HttpServlet {
         }
 
         Counter counter = ObjectifyService.ofy().load().type(Counter.class).filter("campaignID", id).first().now();
-        Long clicks = counter.numOfClicks;
+        Long clicks = 0L;
+        if (counter != null) {
+            clicks = counter.numOfClicks;
+        }
+
         // campaign with such id exist, display informations about campaign to admin
         resp.setStatus(HttpServletResponse.SC_OK);
         Gson gson = new Gson();
@@ -111,6 +94,51 @@ public class AdminServlet extends HttpServlet {
         out.flush();
     }
 
+    // displayAllCampaigns is used to display all campaigns for admin users
+    //url: /api/v1/admin/campaigns/all
+    //
+    // This could be handled in separate file
+    public void displayAllCampaigns(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        PrintWriter out = resp.getWriter();
+
+        List<Campaign> campaigns = ObjectifyService.ofy().load().type(Campaign.class).list();
+        if (campaigns == null) {
+            out.print(new Gson().toJson(""));
+            out.flush();
+            return;
+        }
+        // push json array to client
+        resp.setStatus(HttpServletResponse.SC_OK);
+        JsonArray camp = new Gson().toJsonTree(campaigns).getAsJsonArray();
+        JsonObject wrapper = new JsonObject();
+        wrapper.add("campaigns:", camp);
+        String json = new Gson().toJson(wrapper);
+        out.print(json);
+        out.flush();
+        return;
+    }
+
+    // displayAllPlatforms is displaying data about all platforms
+    // make sure to authenticate admin in outer function
+    public void displayAllPlatforms(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        resp.setContentType("application/json");
+        PrintWriter out = resp.getWriter();
+        List<Platform> platforms = ObjectifyService.ofy().load().type(Platform.class).list();
+        if (platforms == null) {
+            resp.setStatus(HttpServletResponse.SC_NO_CONTENT);
+            out.print(new Gson().toJson(""));
+            out.flush();
+            return;
+        }
+        resp.setStatus(HttpServletResponse.SC_OK);
+        JsonArray platf = new Gson().toJsonTree(platforms).getAsJsonArray();
+        JsonObject wrapper = new JsonObject();
+        wrapper.add("platforms:", platf);
+        out.print(wrapper);
+        out.flush();
+        return;
+    }
+
     //
     // Post request on admin pages adds new campaign and returns ID of the
     // created campaign
@@ -118,32 +146,35 @@ public class AdminServlet extends HttpServlet {
     public void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         resp.setContentType("application/json");
         PrintWriter out = resp.getWriter();
-        // TODO: 1. check admin credentials
+
+        Boolean ok = checkCredentials(req);
+        if (!ok) {
+            handleForbidden(resp);
+            return;
+        }
 
         // parse parameters from POST request
         // if parameters are missing, return bad request (json)
         String campaignName = req.getParameter("name");
         if (campaignName == null) {
-            handleBadRequest(resp);
-            System.out.println("campaignName is null");
+            handleBadRequest(resp, "name parameter was not provided");
             return;
         }
 
         String redirectURL = req.getParameter("redirectURL");
         if (redirectURL == null) {
-            handleBadRequest(resp);
-            System.out.println("redirectURL is null");
+            handleBadRequest(resp, "redirectURL parameter was not provided");
             return;
         }
 
         String paramActive = req.getParameter("active");
         if (paramActive == null) {
-            handleBadRequest(resp);
+            handleBadRequest(resp, "active parameter was not provided");
             return;
         }
         String plat = req.getParameter("platform");
         if (plat == null) {
-            handleBadRequest(resp);
+            handleBadRequest(resp, "platform parameter was not provided");
             return;
         }
 
@@ -169,11 +200,17 @@ public class AdminServlet extends HttpServlet {
     @Override
     public void doDelete(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         resp.setContentType("application/json");
-        // TODO: 1 check credentials
+
+        Boolean ok = checkCredentials(req);
+        if (!ok) {
+            handleForbidden(resp);
+            return;
+        }
 
         Long campaignID = Utilities.getCampaignID(req);
         if (campaignID == null) {
-            handleBadRequest(resp);
+            String msg = String.format("campaign with campaignID: %s does not exist", campaignID);
+            handleBadRequest(resp, msg);
             return;
         }
 
@@ -192,6 +229,11 @@ public class AdminServlet extends HttpServlet {
     // handling campaign updates
     @Override
     public void doPut(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        Boolean ok = checkCredentials(req);
+        if (!ok) {
+            handleForbidden(resp);
+            return;
+        }
 
     }
 
@@ -210,7 +252,7 @@ public class AdminServlet extends HttpServlet {
     }
 
     // handles status code 400 ex: campaign id could not be parsed from url
-    private void handleBadRequest(HttpServletResponse resp) throws IOException {
+    private void handleBadRequest(HttpServletResponse resp, String errorMsg) throws IOException {
         resp.setContentType("application/json");
         resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
 
@@ -218,7 +260,7 @@ public class AdminServlet extends HttpServlet {
         Gson gson = new Gson();
         JsonObject msg = new JsonObject();
         msg.add("statusCode", gson.toJsonTree(400));
-        msg.add("message", gson.toJsonTree("Bad request"));
+        msg.add("message", gson.toJsonTree(errorMsg));
         out.print(msg);
         out.flush();
     }
@@ -239,7 +281,24 @@ public class AdminServlet extends HttpServlet {
 
     // checkAuthenticaion checks if admin sent data are valid
     // ex. (username, password) combination
-    private void checkAuthentication(HttpServletRequest req) throws IOException {
-        //
+    private Boolean checkCredentials(HttpServletRequest req) throws IOException {
+
+        HttpSession session = req.getSession(false);
+        if (session == null) {
+            return false;
+        }
+
+        Object adminID = session.getAttribute("userID");
+        if (adminID == null) {
+            return false;
+        }
+        final Long AdminID = Long.parseLong(adminID.toString());
+
+        Admin dbAdmin = ObjectifyService.ofy().load().type(Admin.class).id(AdminID).now();
+        if (dbAdmin == null) {
+            return false;
+        }
+
+        return true;
     }
 }
