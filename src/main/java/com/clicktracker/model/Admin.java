@@ -14,6 +14,7 @@ public class Admin {
     public Long id;
 
     // name should be unique but that is not possible in GAE?
+    @Index
     public String name;
     public String password; // should be hashed
     public Boolean active; // easy way to disable access

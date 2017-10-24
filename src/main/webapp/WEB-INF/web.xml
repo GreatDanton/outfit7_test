@@ -9,24 +9,36 @@
 
     <!-- Tracking pages -->
     <servlet>
-      <servlet-name>tracker</servlet-name>
-      <servlet-class>com.clicktracker.ClickTrackerServlet</servlet-class>
+        <servlet-name>tracker</servlet-name>
+        <servlet-class>com.clicktracker.ClickTrackerServlet</servlet-class>
     </servlet>
 
     <servlet-mapping>
-      <servlet-name>tracker</servlet-name>
-      <url-pattern>/api/v1/campaign/*</url-pattern>
+        <servlet-name>tracker</servlet-name>
+        <url-pattern>/api/v1/campaign/*</url-pattern>
     </servlet-mapping>
 
     <!--Admin pages -->
     <servlet>
-      <servlet-name>admin-pages</servlet-name>
-      <servlet-class>com.clicktracker.AdminServlet</servlet-class>
+        <servlet-name>admin-pages</servlet-name>
+        <servlet-class>com.clicktracker.AdminServlet</servlet-class>
     </servlet>
 
     <servlet-mapping>
         <servlet-name>admin-pages</servlet-name>
         <url-pattern>/api/v1/admin/campaign/*</url-pattern>
+    </servlet-mapping>
+
+
+    <!-- Admin authentication -->
+    <servlet>
+        <servlet-name>admin-auth</servlet-name>
+        <servlet-class>com.clicktracker.AdminAuthServlet</servlet-class>
+    </servlet>
+
+    <servlet-mapping>
+        <servlet-name>admin-auth</servlet-name>
+        <url-pattern>/api/v1/admin/auth/*</url-pattern>
     </servlet-mapping>
     <!-- end of my own servlet mappings -->
 

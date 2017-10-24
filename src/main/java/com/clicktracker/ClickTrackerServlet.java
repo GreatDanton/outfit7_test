@@ -30,7 +30,7 @@ import com.google.gson.JsonObject;
 //
 public class ClickTrackerServlet extends HttpServlet {
 
-    String mainWebsite = "http://www.outfit7.com";
+    final String mainWebsite = "http://www.outfit7.com";
 
     // Obviously querying database for every GET request is a terrible thing to do
     // The proper way to handle that is via querying memcache or redis (in memory db),
