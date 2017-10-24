@@ -1,24 +1,17 @@
 package com.clicktracker;
 
-import java.io.IOException;
-import java.util.Date;
-
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import com.googlecode.objectify.ObjectifyService;
-import com.googlecode.objectify.VoidWork;
 
 // custom imports
 import java.io.PrintWriter;
+import java.io.IOException;
 import java.util.List;
-import java.util.StringTokenizer;
 import com.clicktracker.model.Admin;
-import com.clicktracker.model.Campaign;
-import com.clicktracker.model.Click;
-import com.clicktracker.model.Counter;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import org.mindrot.jbcrypt.BCrypt;

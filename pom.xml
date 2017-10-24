@@ -82,6 +82,13 @@
             <version>2.5</version>
         </dependency>
 
+<!-- imported JUNIT for testing software locally -->
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.12</version>
+            <scope>test</scope>
+        </dependency>
 
 
 <!-- [START Objectify_Dependencies] -->

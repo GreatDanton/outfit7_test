@@ -8,13 +8,11 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.googlecode.objectify.ObjectifyService;
-import com.googlecode.objectify.VoidWork;
 
 // custom imports
 import java.io.PrintWriter;
 import java.util.List;
 import java.util.StringTokenizer;
-import com.clicktracker.model.Admin;
 import com.clicktracker.model.Campaign;
 import com.clicktracker.model.Click;
 import com.clicktracker.model.Counter;
@@ -148,17 +146,15 @@ public class ClickTrackerServlet extends HttpServlet {
         // if counter row does not exist add new row (that way we do not have
         // to insert new counter on each campaign insert)
         if (counter == null) {
-            Counter newCounter = new Counter(campaignID, 0L);
+            Counter newCounter = new Counter(campaignID, 1L);
             ObjectifyService.ofy().save().entity(newCounter);
             return;
         }
 
-        // counter already exists, add one to numOfClick, insert new row
-        // and delete old counter row
-        Long num = counter.numOfClicks + 1;
-        Counter newCounter = new Counter(campaignID, num);
-        ObjectifyService.ofy().save().entity(newCounter);
-        ObjectifyService.ofy().delete().entity(counter);
+        // counter already exists, add one to numOfClick
+        // update is only possible via new save of the same entity
+        counter.numOfClicks = counter.numOfClicks + 1;
+        ObjectifyService.ofy().save().entity(counter);
     }
 
     // getCampaign returns campaign object with chosen campaignID

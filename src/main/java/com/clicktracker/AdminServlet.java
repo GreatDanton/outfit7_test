@@ -15,7 +15,6 @@ import java.util.Date;
 import com.clicktracker.model.Campaign;
 import com.clicktracker.model.Admin;
 import com.clicktracker.model.Platform;
-import com.clicktracker.model.Click;
 import com.clicktracker.model.Counter;
 
 import com.google.gson.Gson;
@@ -226,7 +225,7 @@ public class AdminServlet extends HttpServlet {
         ObjectifyService.ofy().delete().type(Campaign.class).id(campaignID).now();
     }
 
-    // handling campaign updates
+    // handling admin campaign updates
     @Override
     public void doPut(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         Boolean ok = checkCredentials(req);
@@ -235,9 +234,42 @@ public class AdminServlet extends HttpServlet {
             return;
         }
 
+        resp.setContentType("application/json");
+        PrintWriter out = resp.getWriter();
+
+        Long campaignID = Utilities.getCampaignID(req);
+        Campaign campaign = ObjectifyService.ofy().load().type(Campaign.class).id(campaignID).now();
+        String newName = req.getParameter("name");
+        if (newName != null) {
+            campaign.name = newName;
+        }
+
+        String newRedirectURL = req.getParameter("redirectURL");
+        if (newRedirectURL != null) {
+            campaign.redirectURL = newRedirectURL;
+        }
+
+        String newPlat = req.getParameter("platforms");
+        if (newPlat != null) {
+            List<Long> newPlatforms = Utilities.getPlatforms(newPlat);
+            campaign.platforms = newPlatforms;
+        }
+
+        String active = req.getParameter("active");
+        if (active != null) {
+            campaign.active = Boolean.parseBoolean(active);
+        }
+
+        // saving campaign to db
+        ObjectifyService.ofy().save().entity(campaign).now();
+
+        // after successful patch return campaign data back to admin
+        out.print(new Gson().toJson(campaign));
+        out.flush();
     }
 
-    // handles status code 404 not found: ex: campaign id does not exist in db
+    // helper function for handling status code 404 not found:
+    //ex: campaign id does not exist in db
     private void handleNotFound(HttpServletResponse resp) throws IOException {
         resp.setContentType("application/json");
         resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
@@ -251,7 +283,8 @@ public class AdminServlet extends HttpServlet {
         out.flush();
     }
 
-    // handles status code 400 ex: campaign id could not be parsed from url
+    // helper function fot handling status code 400
+    // ex: campaign id could not be parsed from url
     private void handleBadRequest(HttpServletResponse resp, String errorMsg) throws IOException {
         resp.setContentType("application/json");
         resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
@@ -265,7 +298,8 @@ public class AdminServlet extends HttpServlet {
         out.flush();
     }
 
-    // handling forbidden error message
+    // handling forbidden error message, when admin cookie session is not
+    // present
     private void handleForbidden(HttpServletResponse resp) throws IOException {
         resp.setContentType("application/json");
         resp.setStatus(HttpServletResponse.SC_FORBIDDEN);
@@ -282,7 +316,6 @@ public class AdminServlet extends HttpServlet {
     // checkAuthenticaion checks if admin sent data are valid
     // ex. (username, password) combination
     private Boolean checkCredentials(HttpServletRequest req) throws IOException {
-
         HttpSession session = req.getSession(false);
         if (session == null) {
             return false;
