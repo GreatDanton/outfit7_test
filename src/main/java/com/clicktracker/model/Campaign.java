@@ -25,6 +25,7 @@ public class Campaign {
     public List<Long> platforms;
     // active field => an easy way to disable campaign links without deleting
     // campaign from the database
+    @Index
     public Boolean active;
     public Date createdAt;
 

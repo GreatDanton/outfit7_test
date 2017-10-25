@@ -10,6 +10,7 @@ import com.googlecode.objectify.ObjectifyService;
 // custom imports
 import java.io.PrintWriter;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Date;
 
 import com.clicktracker.model.Campaign;
@@ -21,8 +22,6 @@ import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonElement;
-
-//import javax.json.*;
 
 // AdminServlet handles admin pages => adding, deleting, updating and getting
 // info about campaigns.
@@ -74,7 +73,7 @@ public class AdminServlet extends HttpServlet {
         Campaign campaign = ObjectifyService.ofy().load().type(Campaign.class).id(id).now();
         // campaign with such id does not exist, return 404
         if (campaign == null) {
-            handleNotFound(resp);
+            handleNotFound(resp, "This campaign does not exist");
             return;
         }
 
@@ -99,22 +98,87 @@ public class AdminServlet extends HttpServlet {
     // This could be handled in separate file
     public void displayAllCampaigns(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         PrintWriter out = resp.getWriter();
+        List<Campaign> campaigns = null;
 
-        List<Campaign> campaigns = ObjectifyService.ofy().load().type(Campaign.class).list();
+        String activeParam = req.getParameter("active");
+        if (activeParam == null) {
+            campaigns = ObjectifyService.ofy().load().type(Campaign.class).list();
+        } else {
+            Boolean active = Boolean.parseBoolean(activeParam);
+            // active parameter exist, filter our campaigns
+            if (active != null) {
+                campaigns = ObjectifyService.ofy().load().type(Campaign.class).filter("active", active).list();
+            }
+        }
+
+        // if campaigns list does not exist display blank
         if (campaigns == null) {
-            out.print(new Gson().toJson(""));
-            out.flush();
+            handleNotFound(resp, "Campaigns could not be found");
             return;
         }
+
+        String platformsString = req.getParameter("platforms");
+        List<Campaign> allCampaigns = filterCampaigns(campaigns, platformsString);
+        // such campaigns do not exist
+        if (allCampaigns == null) {
+            handleNotFound(resp, "Campaigns with such conditions could not be found");
+            return;
+        }
+
         // push json array to client
         resp.setStatus(HttpServletResponse.SC_OK);
-        JsonArray camp = new Gson().toJsonTree(campaigns).getAsJsonArray();
+        JsonArray camp = new Gson().toJsonTree(allCampaigns).getAsJsonArray();
         JsonObject wrapper = new JsonObject();
         wrapper.add("campaigns:", camp);
         String json = new Gson().toJson(wrapper);
         out.print(json);
         out.flush();
         return;
+    }
+
+    // filterCampaigns is helper function for filtering list of campaigns that contains
+    // desired platforms:
+    //
+    // Explanation:
+    // we cannot filter that via Google datastore, since platforms field in our
+    // case is a list. We cannot compare list<Long> to just Long value, that's
+    // why we are filtering after the intial load of all campaigns.
+    // NOTE: this might be inefficient O(n*m)?;
+    public List<Campaign> filterCampaigns(List<Campaign> campaigns, String platformsString) throws IOException {
+        // check if campaigns exist
+        if (campaigns == null) {
+            return null;
+        }
+        // check if platformsString exist
+        if (platformsString == null) {
+            return campaigns;
+        }
+
+        List<Long> platforms = Utilities.getPlatforms(platformsString);
+        if (platforms == null) {
+            return null;
+        }
+
+        List<Campaign> allCampaigns = new ArrayList<Campaign>();
+        for (Campaign campaign : campaigns) {
+            for (int i = 0; i < platforms.size(); i++) {
+                Long platform = platforms.get(i);
+                // if the campaign does not contain platform we picked
+                // break out of the loop and don't add it to the
+                // allCampaigns list
+                if (!campaign.platforms.contains(platform)) {
+                    break;
+                }
+
+                // if i is the last element of platforms, add campaign
+                // to allCampaigns variable since it contains all the
+                //platforms we were interested in.
+                if (i + 1 == platforms.size()) {
+                    allCampaigns.add(campaign);
+                }
+            }
+        }
+        return allCampaigns;
     }
 
     // displayAllPlatforms is displaying data about all platforms
@@ -159,10 +223,18 @@ public class AdminServlet extends HttpServlet {
             handleBadRequest(resp, "name parameter was not provided");
             return;
         }
+        if (campaignName.length() < 1) {
+            handleBadRequest(resp, "name parameter should not be empty");
+            return;
+        }
 
         String redirectURL = req.getParameter("redirectURL");
         if (redirectURL == null) {
             handleBadRequest(resp, "redirectURL parameter was not provided");
+            return;
+        }
+        if (redirectURL.length() < 1) {
+            handleBadRequest(resp, "redirectURL should not be empty");
             return;
         }
 
@@ -171,9 +243,18 @@ public class AdminServlet extends HttpServlet {
             handleBadRequest(resp, "active parameter was not provided");
             return;
         }
-        String plat = req.getParameter("platform");
+        if (paramActive.length() < 1) {
+            handleBadRequest(resp, "active parameter should not be empty");
+        }
+
+        String plat = req.getParameter("platforms");
         if (plat == null) {
-            handleBadRequest(resp, "platform parameter was not provided");
+            handleBadRequest(resp, "platforms parameter was not provided");
+            return;
+        }
+
+        if (plat.length() < 1) {
+            handleBadRequest(resp, "platforms parameter should not be empty");
             return;
         }
 
@@ -216,13 +297,13 @@ public class AdminServlet extends HttpServlet {
         // check if campaign id actually exist
         Campaign c = ObjectifyService.ofy().load().type(Campaign.class).id(campaignID).now();
         if (c == null) {
-            handleNotFound(resp);
+            handleNotFound(resp, "This campaign could not be found");
             return;
         }
 
         // everything is ok delete campaign id = campaignID
         resp.setStatus(HttpServletResponse.SC_OK);
-        ObjectifyService.ofy().delete().type(Campaign.class).id(campaignID).now();
+        ObjectifyService.ofy().delete().entity(c);
     }
 
     // handling admin campaign updates
@@ -270,7 +351,7 @@ public class AdminServlet extends HttpServlet {
 
     // helper function for handling status code 404 not found:
     //ex: campaign id does not exist in db
-    private void handleNotFound(HttpServletResponse resp) throws IOException {
+    private void handleNotFound(HttpServletResponse resp, String errorMsg) throws IOException {
         resp.setContentType("application/json");
         resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
 
@@ -278,7 +359,7 @@ public class AdminServlet extends HttpServlet {
         Gson gson = new Gson();
         JsonObject msg = new JsonObject();
         msg.add("statusCode", gson.toJsonTree(404));
-        msg.add("message", gson.toJsonTree("This campaign does not exist"));
+        msg.add("message", gson.toJsonTree(errorMsg));
         out.print(new Gson().toJson(msg));
         out.flush();
     }
