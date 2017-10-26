@@ -7,6 +7,7 @@ import com.googlecode.objectify.util.Closeable;
 
 // import testing packages
 import org.mockito.Mockito;
+import org.mockito.ArgumentCaptor;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -86,6 +87,31 @@ public class ClickTrackerTest {
         ObjectifyService.ofy().save().entity(c).now();
     }
 
+    // testing client get request and redirection
+    @Test
+    public void doGetTest() throws IOException {
+        createTestCampaign();
+        Campaign c = ObjectifyService.ofy().load().type(Campaign.class).first().now();
+        Mockito.when(mockRequest.getPathInfo()).thenReturn("/" + String.valueOf(c.id));
+
+        ArgumentCaptor<String> argumentCaptor = ArgumentCaptor.forClass(String.class);
+        new ClickTrackerServlet().doGet(mockRequest, mockResponse);
+
+        Mockito.verify(mockResponse).sendRedirect(argumentCaptor.capture());
+        assertEquals(c.redirectURL, argumentCaptor.getValue());
+    }
+
+    @Test
+    public void doGetTest404() throws IOException {
+        createTestCampaign();
+        Mockito.when(mockRequest.getPathInfo()).thenReturn("/nonExistentCampaignID");
+        new ClickTrackerServlet().doGet(mockRequest, mockResponse);
+        // capture send redirect url
+        ArgumentCaptor<String> argumentCaptor = ArgumentCaptor.forClass(String.class);
+        Mockito.verify(mockResponse).sendRedirect(argumentCaptor.capture());
+        assertEquals("http://www.outfit7.com", argumentCaptor.getValue());
+    }
+
     @Test
     public void doPostTest() throws IOException {
         // create platform table and campaign table
@@ -154,15 +180,16 @@ public class ClickTrackerTest {
 
         // simulate first click on the campaign
         new ClickTrackerServlet().storeClick(mockRequest);
-        // check if number of clicks in counter is the same as expected
-        Counter counter = ObjectifyService.ofy().load().type(Counter.class).filter("campaignID", c.id).first().now();
         Long clicks = 1L;
-        assertEquals(clicks, counter.numOfClicks);
 
-        // count number of clicks in click table and compare it with counter
+        // count number of clicks in click table and compare it to clicks variable
         List<Click> clicksArr = ObjectifyService.ofy().load().type(Click.class).list();
         Long numOfClicks = new Long(clicksArr.size());
-        assertEquals(numOfClicks, counter.numOfClicks);
+        assertEquals(clicks, numOfClicks);
+
+        // check if number of clicks in counter is the same as expected
+        Counter counter = ObjectifyService.ofy().load().type(Counter.class).filter("campaignID", c.id).first().now();
+        assertEquals(clicks, counter.numOfClicks);
 
         // simulate another click, check if numbers match
         new ClickTrackerServlet().storeClick(mockRequest);
