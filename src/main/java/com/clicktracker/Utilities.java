@@ -49,7 +49,7 @@ public class Utilities {
             // if platform is num admin provided platforms as string of platform ids
             Long id = stringToLong(platform);
             if (id != null) {
-                Platform p = ObjectifyService.ofy().load().type(Platform.class).id(platform).now();
+                Platform p = ObjectifyService.ofy().load().type(Platform.class).id(id).now();
                 // check if platform actually exist in database
                 if (p != null) {
                     platformIDS.add(p.id);
