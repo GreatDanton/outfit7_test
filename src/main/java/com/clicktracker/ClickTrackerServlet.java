@@ -111,7 +111,7 @@ public class ClickTrackerServlet extends HttpServlet {
 
     // storeClick is helper function for storing click request
     // into database
-    public static void storeClick(HttpServletRequest req) throws IOException {
+    public void storeClick(HttpServletRequest req) throws IOException {
         final Long campaignID = Utilities.getCampaignID(req);
         if (campaignID == null) {
             return;
