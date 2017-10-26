@@ -24,7 +24,7 @@ import com.google.gson.JsonObject;
 // GET - is redirecting
 // POST - is returning JSON object {href: redirectURL}
 //
-// See README.txt file for an explanation why
+// See Explanations.txt file for an explanation why
 //
 public class ClickTrackerServlet extends HttpServlet {
 
@@ -111,7 +111,7 @@ public class ClickTrackerServlet extends HttpServlet {
 
     // storeClick is helper function for storing click request
     // into database
-    private void storeClick(HttpServletRequest req) throws IOException {
+    public static void storeClick(HttpServletRequest req) throws IOException {
         final Long campaignID = Utilities.getCampaignID(req);
         if (campaignID == null) {
             return;

@@ -15,6 +15,7 @@ public class Click {
     @Id
     public Long id;
     // id of the campaign
+    @Index
     public Long campaignID;
     // storing ip for each request in case we are interested in statistics later
     // ex. how many unique visitors we had this month
