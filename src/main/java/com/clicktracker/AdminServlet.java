@@ -303,7 +303,7 @@ public class AdminServlet extends HttpServlet {
 
         // everything is ok delete campaign id = campaignID
         resp.setStatus(HttpServletResponse.SC_OK);
-        ObjectifyService.ofy().delete().entity(c);
+        ObjectifyService.ofy().delete().entity(c).now();
     }
 
     // handling admin campaign updates

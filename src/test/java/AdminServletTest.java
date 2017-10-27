@@ -11,6 +11,7 @@ import org.mockito.Mockito;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertNotEquals;
 import org.junit.Test;
 import org.junit.After;
 import org.junit.Before;
@@ -220,7 +221,88 @@ public class AdminServletTest {
 
         List<Campaign> nullCampaign = new AdminServlet().filterCampaigns(null, "");
         assertNull(nullCampaign);
+    }
 
+    @Test
+    public void deleteCampaign_Test() throws IOException {
+        List<Campaign> campaigns = createDummyCampaigns();
+        Campaign c1 = campaigns.get(0);
+        Admin admin = AdminAuthTest.createAdmin(); // creates admin user
+        // make checkCredentials function happy
+        HttpSession session = Mockito.mock(HttpSession.class);
+        Mockito.when(mockRequest.getSession(false)).thenReturn(session);
+        Mockito.when(session.getAttribute("adminID")).thenReturn(admin.id);
+        Mockito.when(mockRequest.getPathInfo()).thenReturn("/" + String.valueOf(c1.id));
+
+        Long cID = c1.id;
+        // delete first campaign;
+        new AdminServlet().doDelete(mockRequest, mockResponse);
+        // check if campaign was deleted
+        Campaign deletedCampaign = ObjectifyService.ofy().load().type(Campaign.class).id(cID).now();
+        assertNull(deletedCampaign);
+    }
+
+    @Test
+    public void deleteCampaign_nosession_Test() throws IOException {
+        List<Campaign> campaigns = createDummyCampaigns();
+        Campaign c1 = campaigns.get(0);
+        Admin admin = AdminAuthTest.createAdmin();
+        // no session
+        Mockito.when(mockRequest.getPathInfo()).thenReturn("/" + String.valueOf(c1.id));
+        // delete without session should fail
+        new AdminServlet().doDelete(mockRequest, mockResponse);
+        String output = responseWriter.toString();
+        assertTrue(output.contains("Forbidden"));
+    }
+
+    @Test
+    public void deleteCampaign_missingCampaignID_Test() throws IOException {
+        List<Campaign> campaigns = createDummyCampaigns();
+        Campaign c1 = campaigns.get(0);
+        Admin admin = AdminAuthTest.createAdmin();
+
+        HttpSession session = Mockito.mock(HttpSession.class);
+        Mockito.when(mockRequest.getSession(false)).thenReturn(session);
+        Mockito.when(mockRequest.getPathInfo()).thenReturn("/missingCampaignID");
+        Mockito.when(session.getAttribute("adminID")).thenReturn(admin.id);
+
+        // delete without session should fail
+        new AdminServlet().doDelete(mockRequest, mockResponse);
+        String output = responseWriter.toString();
+        assertTrue(output.contains("does not exist"));
+    }
+
+    @Test
+    public void updateCampaign_Test() throws IOException {
+        List<Campaign> campaigns = createDummyCampaigns();
+        Campaign c1 = campaigns.get(0);
+        String c1Name = c1.name;
+        String c1URL = c1.redirectURL;
+        Boolean c1Active = c1.active;
+        Date c1createdAt = c1.createdAt;
+
+        Admin admin = AdminAuthTest.createAdmin();
+        HttpSession session = Mockito.mock(HttpSession.class);
+        Mockito.when(mockRequest.getSession(false)).thenReturn(session);
+        Mockito.when(session.getAttribute("adminID")).thenReturn(admin.id);
+        Mockito.when(mockRequest.getPathInfo()).thenReturn("/" + String.valueOf(c1.id));
+
+        String newName = "My new name";
+        String newURL = "http://newURL.eu";
+        Mockito.when(mockRequest.getParameter("name")).thenReturn(newName);
+        Mockito.when(mockRequest.getParameter("redirectURL")).thenReturn(newURL);
+
+        new AdminServlet().doPut(mockRequest, mockResponse);
+        // name and url parameters should be updated;
+        Campaign updatedCampaign = ObjectifyService.ofy().load().type(Campaign.class).id(c1.id).now();
+        assertEquals(c1Active, updatedCampaign.active);
+        assertEquals(c1createdAt, updatedCampaign.createdAt);
+        assertEquals(newName, updatedCampaign.name);
+        assertEquals(newURL, updatedCampaign.redirectURL);
+
+        // name & redirect url should be different
+        assertNotEquals(c1Name, updatedCampaign.name);
+        assertNotEquals(c1URL, updatedCampaign.redirectURL);
     }
 
 }
