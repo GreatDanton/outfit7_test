@@ -71,9 +71,9 @@ public class AdminAuthServlet extends HttpServlet {
     }
 
     // class for returning admin id and credentials bool from function
-    final class Credentials {
-        Long adminId;
-        Boolean ok;
+    public class Credentials {
+        public Long adminId;
+        public Boolean ok;
 
         public Credentials(Long adminId, Boolean ok) {
             this.adminId = adminId;

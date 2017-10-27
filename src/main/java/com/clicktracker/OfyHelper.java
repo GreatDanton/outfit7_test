@@ -98,12 +98,8 @@ public class OfyHelper implements ServletContextListener {
                 System.exit(0);
             }
 
-            // random salt for bcrypt
-            String salt = BCrypt.gensalt();
-            String passHash = BCrypt.hashpw(adminPass, salt);
-
             // save admin to admin table
-            Admin admin = new Admin(adminName, passHash, true);
+            Admin admin = new Admin(adminName, adminPass, true);
             ObjectifyService.ofy().save().entity(admin).now();
         }
     }

@@ -5,6 +5,7 @@ import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
 import com.googlecode.objectify.annotation.Index;
 import com.googlecode.objectify.annotation.Parent;
+import org.mindrot.jbcrypt.BCrypt;
 
 // Create table for admin
 @Entity
@@ -26,7 +27,8 @@ public class Admin {
     // Admin storing data?
     public Admin(String name, String password, Boolean active) {
         this.name = name;
-        this.password = password;
+        // hash password
+        this.password = BCrypt.hashpw(password, BCrypt.gensalt());
         this.active = active;
     }
 }

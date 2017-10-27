@@ -48,12 +48,11 @@ public class ClickTrackerTest {
     @BeforeClass
     public static void setupBeforeClass() {
         ObjectifyService.setFactory(new ObjectifyFactory());
-        // register database
+        // register
         ObjectifyService.register(Platform.class);
         ObjectifyService.register(Click.class);
         ObjectifyService.register(Counter.class);
         ObjectifyService.register(Campaign.class);
-
     }
 
     @Before
