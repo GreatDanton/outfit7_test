@@ -37,9 +37,9 @@ public class AdminAuthServlet extends HttpServlet {
             }
 
             HttpSession session = req.getSession(true);
-            Object userID = session.getAttribute("userID");
-            if (userID == null) { // userID does not exist
-                session.setAttribute("userID", credentials.adminId);
+            Object adminID = session.getAttribute("adminID");
+            if (adminID == null) { // adminID does not exist
+                session.setAttribute("adminID", credentials.adminId);
             }
             session.setMaxInactiveInterval(24 * 60 * 60);
 

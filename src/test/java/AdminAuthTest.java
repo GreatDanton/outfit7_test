@@ -74,7 +74,7 @@ public class AdminAuthTest {
     }
 
     // helper function for creating admin in test functions
-    public Admin createAdmin() {
+    public static Admin createAdmin() {
         Admin admin = new Admin("admin", "1234", true);
         ObjectifyService.ofy().save().entity(admin).now();
         return admin;

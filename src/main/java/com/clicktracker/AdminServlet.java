@@ -396,13 +396,13 @@ public class AdminServlet extends HttpServlet {
 
     // checkAuthenticaion checks if admin sent data are valid
     // ex. (username, password) combination
-    private Boolean checkCredentials(HttpServletRequest req) throws IOException {
+    public Boolean checkCredentials(HttpServletRequest req) throws IOException {
         HttpSession session = req.getSession(false);
         if (session == null) {
             return false;
         }
 
-        Object adminID = session.getAttribute("userID");
+        Object adminID = session.getAttribute("adminID");
         if (adminID == null) {
             return false;
         }
