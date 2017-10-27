@@ -10,6 +10,7 @@ import org.mockito.Mockito;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertNull;
 import org.junit.Test;
 import org.junit.After;
 import org.junit.Before;
@@ -22,6 +23,10 @@ import javax.servlet.http.HttpSession;
 import java.io.StringWriter;
 import java.io.PrintWriter;
 import java.io.IOException;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.Arrays;
 
 import com.clicktracker.AdminServlet;
 // custom imports
@@ -71,6 +76,46 @@ public class AdminServletTest {
         this.helper.tearDown();
     }
 
+    // helper function to create campaigns with different
+    // arguments
+    public List<Campaign> createDummyCampaigns() {
+        List<Platform> platforms = createPlatforms();
+        Platform android = platforms.get(0);
+        Platform iphone = platforms.get(1);
+        List<Long> both = new ArrayList<Long>();
+        both.add(android.id);
+        both.add(iphone.id);
+
+        List<Long> androidOnly = new ArrayList<Long>();
+        androidOnly.add(android.id);
+
+        List<Long> iphoneOnly = new ArrayList<Long>();
+        iphoneOnly.add(iphone.id);
+
+        Campaign c1 = new Campaign("My first campaign", "http://www.myfirstcampaign.com", both, true, new Date());
+        Campaign c2 = new Campaign("My second campaign", "http://www.mysecondcampaign.com", androidOnly, true,
+                new Date());
+        Campaign c3 = new Campaign("My third campaign", "http://www.mythirdcampaign.com", androidOnly, false,
+                new Date());
+        Campaign c4 = new Campaign("My fourth campaign", "http://www.myfourthcampaign.com", iphoneOnly, true,
+                new Date());
+
+        List<Campaign> allCampaigns = Arrays.asList(c1, c2, c3, c4);
+        ObjectifyService.ofy().save().entities(c1, c2, c3, c4).now();
+        return allCampaigns;
+    }
+
+    // helper function to create android, iphone, platforms
+    public List<Platform> createPlatforms() {
+        Platform p1 = new Platform("android");
+        Platform p2 = new Platform("iphone");
+        ObjectifyService.ofy().save().entities(p1, p2).now();
+        List<Platform> platforms = new ArrayList<Platform>();
+        platforms.add(p1);
+        platforms.add(p2);
+        return platforms;
+    }
+
     // tests checkCredentials helper function (if admin is logged in).
     @Test
     public void checkCredentialsTest() throws IOException {
@@ -105,4 +150,77 @@ public class AdminServletTest {
         Boolean loggedIn = new AdminServlet().checkCredentials(mockRequest);
         assertTrue(!loggedIn);
     }
+
+    // testing if platforms in datastore are displayed when calling
+    // displayAllPlatforms function
+    @Test
+    public void displayAllPlatforms_Test() throws IOException {
+        Platform p1 = new Platform("android");
+        Platform p2 = new Platform("iphone");
+        ObjectifyService.ofy().save().entities(p1, p2).now();
+
+        new AdminServlet().displayAllPlatforms(mockRequest, mockResponse);
+        String output = responseWriter.toString();
+        assertTrue(output.contains("platforms"));
+        assertTrue(output.contains("android"));
+        assertTrue(output.contains("iphone"));
+    }
+
+    // testing if only one platform exists in db
+    @Test
+    public void displayAllPlatforms_Test2() throws IOException {
+        Platform p = new Platform("android");
+        ObjectifyService.ofy().save().entity(p).now();
+
+        new AdminServlet().displayAllPlatforms(mockRequest, mockResponse);
+        String output = responseWriter.toString();
+        assertTrue(output.contains("android"));
+        assertTrue(!output.contains("iphone"));
+    }
+
+    // testing filterCampaigns function
+    // TODO: split this function into multiple smaller functions
+    // => easier to track specific error
+    @Test
+    public void filterCampaigns_Test() throws IOException {
+        List<Campaign> campaigns = createDummyCampaigns(); // create 4 campaigns
+        Platform android = ObjectifyService.ofy().load().type(Platform.class).filter("name", "android").first().now();
+        Platform iphone = ObjectifyService.ofy().load().type(Platform.class).filter("name", "iphone").first().now();
+
+        List<Campaign> androidOnly = new AdminServlet().filterCampaigns(campaigns, "android");
+        assertEquals(3, androidOnly.size());
+        for (Campaign c : androidOnly) {
+            assertTrue(c.platforms.contains(android.id));
+        }
+
+        List<Campaign> iphoneOnly = new AdminServlet().filterCampaigns(campaigns, "iphone");
+        assertEquals(2, iphoneOnly.size());
+        for (Campaign c : iphoneOnly) {
+            assertTrue(c.platforms.contains(iphone.id));
+        }
+
+        List<Campaign> emptyCampaigns = new ArrayList<Campaign>();
+        List<Campaign> empty = new AdminServlet().filterCampaigns(emptyCampaigns, "android");
+        assertTrue(empty.isEmpty());
+
+        List<Campaign> bothPlatforms = new AdminServlet().filterCampaigns(campaigns, "android, iphone");
+        assertEquals(1, bothPlatforms.size());
+        for (Campaign c : bothPlatforms) {
+            assertTrue(c.platforms.contains(iphone.id));
+            assertTrue(c.platforms.contains(android.id));
+        }
+
+        String bothPlatformsString = String.valueOf(android.id) + ", " + String.valueOf(iphone.id);
+        List<Campaign> bothPlatforms2 = new AdminServlet().filterCampaigns(campaigns, bothPlatformsString);
+        assertEquals(1, bothPlatforms2.size());
+        for (Campaign c : bothPlatforms2) {
+            assertTrue(c.platforms.contains(iphone.id));
+            assertTrue(c.platforms.contains(android.id));
+        }
+
+        List<Campaign> nullCampaign = new AdminServlet().filterCampaigns(null, "");
+        assertNull(nullCampaign);
+
+    }
+
 }
