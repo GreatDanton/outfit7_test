@@ -86,7 +86,8 @@ public class ClickTrackerTest {
         ObjectifyService.ofy().save().entity(c).now();
     }
 
-    // testing client get request and redirection
+    // testing client get request on campaign id that do exist in db
+    // - client should be redirected to redirectURL in db
     @Test
     public void doGetTest() throws IOException {
         createTestCampaign();
@@ -100,6 +101,8 @@ public class ClickTrackerTest {
         assertEquals(c.redirectURL, argumentCaptor.getValue());
     }
 
+    // testing client get request on the campaign id that do not exist
+    // client should be redirected to default redirect url (outfit7.com);
     @Test
     public void doGetTest404() throws IOException {
         createTestCampaign();
@@ -111,6 +114,9 @@ public class ClickTrackerTest {
         assertEquals("http://www.outfit7.com", argumentCaptor.getValue());
     }
 
+    // create post request on url with campaignID that exist in the database
+    // - check if client gets correct redirectURL in response
+    // - check if counting clicks is working correctly
     @Test
     public void doPostTest() throws IOException {
         // create platform table and campaign table
@@ -148,6 +154,7 @@ public class ClickTrackerTest {
     }
 
     // check post request on campaign id that does not exist
+    // client should get default redirectURL (www.outfit7.com) in json response
     @Test
     public void doPost404() throws IOException {
         Mockito.when(mockRequest.getPathInfo()).thenReturn("/nonExistentCampaignID");

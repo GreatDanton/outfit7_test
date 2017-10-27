@@ -7,7 +7,6 @@ import com.googlecode.objectify.util.Closeable;
 
 // import testing packages
 import org.mockito.Mockito;
-import org.mockito.ArgumentCaptor;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -23,9 +22,6 @@ import javax.servlet.http.HttpSession;
 import java.io.StringWriter;
 import java.io.PrintWriter;
 import java.io.IOException;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Date;
 
 import com.clicktracker.AdminAuthServlet;
 import com.clicktracker.AdminAuthServlet.Credentials;
@@ -84,7 +80,7 @@ public class AdminAuthTest {
         return admin;
     }
 
-    // test credentialsCheck on correct name & password
+    // test credentialsCheck function on correct name & password
     @Test
     public void credentialsCheckTest() throws IOException {
         Admin admin = createAdmin();
@@ -113,14 +109,15 @@ public class AdminAuthTest {
     @Test
     public void credentialsWrongUsernameTest() throws IOException {
         Admin admin = createAdmin();
+        // wrong name
         Mockito.when(mockRequest.getParameter("name")).thenReturn("_admin");
-        // wrong password
         Mockito.when(mockRequest.getParameter("password")).thenReturn("1234");
 
         Credentials adminCred = new AdminAuthServlet().credentialsCheck(mockRequest, mockResponse);
         assertTrue(!adminCred.ok);
     }
 
+    // check admin login function when the password is correct
     @Test
     public void loginTest() throws IOException {
         Admin admin = createAdmin();
@@ -137,13 +134,25 @@ public class AdminAuthTest {
         assertTrue(data.contains("Successfully logged in"));
     }
 
+    // check admin login when wrong password is used
+    @Test
+    public void loginTest_wrongPassword() throws IOException {
+        Admin admin = createAdmin();
+        Mockito.when(mockRequest.getPathInfo()).thenReturn("/login");
+        Mockito.when(mockRequest.getParameter("name")).thenReturn("admin");
+        Mockito.when(mockRequest.getParameter("password")).thenReturn("321");
+
+        // try to login admin
+        new AdminAuthServlet().doPost(mockRequest, mockResponse);
+        String data = responseWriter.toString();
+        assertTrue(data.contains("Bad request"));
+    }
+
     // check admin logout function
     @Test
     public void logoutTest() throws IOException {
         // first we have to login to test if logout is working
         Mockito.when(mockRequest.getPathInfo()).thenReturn("/logout");
-        Mockito.when(mockRequest.getParameter("name")).thenReturn("admin");
-        Mockito.when(mockRequest.getParameter("password")).thenReturn("1234");
         // mock user session
         HttpSession session = Mockito.mock(HttpSession.class);
         // we simulate admin that is already logged in
@@ -155,7 +164,8 @@ public class AdminAuthTest {
         assertTrue(data.contains("Successfully logged out"));
     }
 
-    // if session is not present it should return bad request message
+    // check logout if session is not present
+    // - it should return bad request json message
     @Test
     public void logoutTest_NoSession() throws IOException {
         Mockito.when(mockRequest.getPathInfo()).thenReturn("/logout");
