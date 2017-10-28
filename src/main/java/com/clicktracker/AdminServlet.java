@@ -406,7 +406,10 @@ public class AdminServlet extends HttpServlet {
         if (adminID == null) {
             return false;
         }
-        final Long AdminID = Long.parseLong(adminID.toString());
+        final Long AdminID = Utilities.stringToLong(adminID.toString());
+        if (AdminID == null) {
+            return false;
+        }
 
         Admin dbAdmin = ObjectifyService.ofy().load().type(Admin.class).id(AdminID).now();
         if (dbAdmin == null) {

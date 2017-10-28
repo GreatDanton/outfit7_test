@@ -268,4 +268,112 @@ public class AdminServletTest {
         assertNotEquals(c1Name, updatedCampaign.name);
         assertNotEquals(c1URL, updatedCampaign.redirectURL);
     }
+
+    // test if admin is able to create campaign
+    @Test
+    public void createCampaign_Test() throws IOException {
+        Admin admin = TestUtils.createAdmin();
+        // create platforms in db
+        String name = "My campaign name";
+        String redirectURL = "http://mycampaign.com";
+        Boolean active = true;
+        // create platforms
+        TestUtils.createPlatforms();
+
+        // simulate session
+        HttpSession session = Mockito.mock(HttpSession.class);
+        Mockito.when(mockRequest.getSession(false)).thenReturn(session);
+        Mockito.when(session.getAttribute("adminID")).thenReturn(admin.id);
+
+        // handle parameter requests
+        Mockito.when(mockRequest.getParameter("name")).thenReturn(name);
+        Mockito.when(mockRequest.getParameter("redirectURL")).thenReturn(redirectURL);
+        Mockito.when(mockRequest.getParameter("active")).thenReturn("true");
+        Mockito.when(mockRequest.getParameter("platforms")).thenReturn("android");
+
+        // create new campaign of out of parameters
+        new AdminServlet().doPost(mockRequest, mockResponse);
+
+        // post => create campaign request returns id of the created campaign
+        String output = responseWriter.toString();
+        assertTrue(output.contains("id"));
+
+        // campaign should be created now
+        Campaign c = ObjectifyService.ofy().load().type(Campaign.class).first().now();
+        assertEquals(name, c.name);
+        assertEquals(redirectURL, c.redirectURL);
+        assertEquals(active, c.active);
+    }
+
+    // testing createCampaign when we have missing parameter
+    @Test
+    public void createCampaign_missingParameter_Test() throws IOException {
+        Admin admin = TestUtils.createAdmin();
+        // create platforms in db
+        String redirectURL = "http://mycampaign.com";
+        // create platforms
+        TestUtils.createPlatforms();
+
+        // simulate session
+        HttpSession session = Mockito.mock(HttpSession.class);
+        Mockito.when(mockRequest.getSession(false)).thenReturn(session);
+        Mockito.when(session.getAttribute("adminID")).thenReturn(admin.id);
+
+        // handle parameter requests
+        // missing getParameter(name);
+        Mockito.when(mockRequest.getParameter("redirectURL")).thenReturn(redirectURL);
+        Mockito.when(mockRequest.getParameter("active")).thenReturn("true");
+        Mockito.when(mockRequest.getParameter("platforms")).thenReturn("android");
+
+        new AdminServlet().doPost(mockRequest, mockResponse);
+        // shoudl return error
+        Campaign c = ObjectifyService.ofy().load().type(Campaign.class).first().now();
+        assertNull(c);
+
+        String output = responseWriter.toString();
+        assertTrue(output.contains("name parameter was not provided"));
+    }
+
+    // testing create campaign func when we have empty name parameter
+    @Test
+    public void createCampaigns_emptyParameter_Test() throws IOException {
+        Admin admin = TestUtils.createAdmin();
+        // create platforms in db
+        String redirectURL = "http://mycampaign.com";
+        // create platforms
+        TestUtils.createPlatforms();
+
+        // simulate session
+        HttpSession session = Mockito.mock(HttpSession.class);
+        Mockito.when(mockRequest.getSession(false)).thenReturn(session);
+        Mockito.when(session.getAttribute("adminID")).thenReturn(admin.id);
+
+        // handle parameter requests
+        // missing getParameter(name);
+        Mockito.when(mockRequest.getParameter("name")).thenReturn("");
+        Mockito.when(mockRequest.getParameter("redirectURL")).thenReturn(redirectURL);
+        Mockito.when(mockRequest.getParameter("active")).thenReturn("true");
+        Mockito.when(mockRequest.getParameter("platforms")).thenReturn("android");
+
+        new AdminServlet().doPost(mockRequest, mockResponse);
+        // shoudl return error
+        Campaign c = ObjectifyService.ofy().load().type(Campaign.class).first().now();
+        assertNull(c);
+
+        String output = responseWriter.toString();
+        assertTrue(output.contains("name parameter should not be empty"));
+    }
+
+    // testing admin session check
+    @Test
+    public void createCampaigns_notLoggedIn_Test() throws IOException {
+        HttpSession session = Mockito.mock(HttpSession.class);
+        Mockito.when(mockRequest.getSession(false)).thenReturn(session);
+        Mockito.when(session.getAttribute("adminID")).thenReturn("noadminID");
+
+        new AdminServlet().doPost(mockRequest, mockResponse);
+        String output = responseWriter.toString();
+        assertTrue(output.contains("403"));
+        assertTrue(output.contains("Forbidden"));
+    }
 }

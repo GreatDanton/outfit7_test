@@ -61,5 +61,4 @@ public class TestUtils {
         platforms.add(p2);
         return platforms;
     }
-
 }
