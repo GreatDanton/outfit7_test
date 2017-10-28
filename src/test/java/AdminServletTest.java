@@ -30,6 +30,7 @@ import java.util.Date;
 import java.util.Arrays;
 
 import com.clicktracker.AdminServlet;
+import com.clicktracker.Utilities;
 // custom imports
 import com.clicktracker.model.Campaign;
 import com.clicktracker.model.Platform;
@@ -112,6 +113,138 @@ public class AdminServletTest {
         assertTrue(!loggedIn);
     }
 
+    // get details about specific campaign
+    // api/v1/campaign/{campaignID}
+    @Test
+    public void doGet_specificCampaign_Test() throws IOException {
+        Admin admin = TestUtils.createAdmin();
+        List<Campaign> campaigns = TestUtils.createTestCampaigns();
+        Campaign c1 = campaigns.get(0);
+
+        HttpSession session = Mockito.mock(HttpSession.class);
+        Mockito.when(mockRequest.getSession(false)).thenReturn(session);
+        Mockito.when(mockRequest.getPathInfo()).thenReturn("/" + String.valueOf(c1.id));
+        Mockito.when(session.getAttribute("adminID")).thenReturn(admin.id);
+
+        new AdminServlet().doGet(mockRequest, mockResponse);
+
+        String output = responseWriter.toString();
+        assertTrue(output.contains("id"));
+        assertTrue(output.contains(String.valueOf(c1.id)));
+        assertTrue(output.contains(c1.redirectURL));
+    }
+
+    // missing session test - admin is not logged in
+    @Test
+    public void doGet_notLoggedIn_Test() throws IOException {
+        Admin admin = TestUtils.createAdmin();
+        List<Campaign> campaigns = TestUtils.createTestCampaigns();
+        Campaign c1 = campaigns.get(0);
+        // not providing session
+        Mockito.when(mockRequest.getPathInfo()).thenReturn("/" + String.valueOf(c1.id));
+
+        new AdminServlet().doGet(mockRequest, mockResponse);
+
+        String output = responseWriter.toString();
+        assertTrue(output.contains("403"));
+        assertTrue(output.contains("Forbidden"));
+    }
+
+    // simulate api/v1/campaign/all click
+    @Test
+    public void doGet_displayAllCampaigns_Test() throws IOException {
+        Admin admin = TestUtils.createAdmin();
+        List<Campaign> campaigns = TestUtils.createTestCampaigns();
+        HttpSession session = Mockito.mock(HttpSession.class);
+        Mockito.when(mockRequest.getSession(false)).thenReturn(session);
+        Mockito.when(mockRequest.getPathInfo()).thenReturn("/all");
+        Mockito.when(session.getAttribute("adminID")).thenReturn(admin.id);
+        new AdminServlet().doGet(mockRequest, mockResponse);
+
+        String output = responseWriter.toString();
+        for (Campaign c : campaigns) {
+            assertTrue(output.contains(String.valueOf(c.id)));
+            assertTrue(output.contains(c.name));
+            assertTrue(output.contains(c.redirectURL));
+        }
+    }
+
+    // testing just displayAllCampaigns function
+    @Test
+    public void displayAllCampaigns_Test() throws IOException {
+        List<Campaign> campaigns = TestUtils.createTestCampaigns();
+        Mockito.when(mockRequest.getPathInfo()).thenReturn("/all");
+        new AdminServlet().displayAllCampaigns(mockRequest, mockResponse);
+        String output = responseWriter.toString();
+        for (Campaign c : campaigns) {
+            assertTrue(output.contains(String.valueOf(c.id)));
+            assertTrue(output.contains(c.name));
+            assertTrue(output.contains(c.redirectURL));
+        }
+    }
+
+    // testing displayAllCampaigns, with parameter ?active=false
+    @Test
+    public void displayAllCampaigns_nonActiveOnly_Test() throws IOException {
+        List<Campaign> campaigns = TestUtils.createTestCampaigns();
+        List<Campaign> activeCampaignIDS = new ArrayList<Campaign>();
+        List<Campaign> nonActiveCampaignIDS = new ArrayList<Campaign>();
+        // add created campaigns to relevant arrays
+        for (Campaign c : campaigns) {
+            if (c.active) {
+                activeCampaignIDS.add(c);
+            } else {
+                nonActiveCampaignIDS.add(c);
+            }
+        }
+
+        Mockito.when(mockRequest.getParameter("active")).thenReturn("false");
+        new AdminServlet().displayAllCampaigns(mockRequest, mockResponse);
+        String output = responseWriter.toString();
+
+        // non active campaigns should be present
+        for (Campaign c : nonActiveCampaignIDS) {
+            assertTrue(output.contains(String.valueOf(c.name)));
+        }
+
+        // active campaigns should not be present in output
+        for (Campaign c : activeCampaignIDS) {
+            assertTrue(!output.contains(String.valueOf(c.name)));
+        }
+    }
+
+    // testing displayAllCampaigns with parameter ?platform=iphone
+    @Test
+    public void displayAllCampaigns_iphoneOnly_Test() throws IOException {
+        List<Campaign> campaigns = TestUtils.createTestCampaigns();
+        // filterCampaigns function is tested below, so we can be sure it
+        // filters correctly, otherwise test below will fail
+        List<Campaign> iphoneCampaigns = new AdminServlet().filterCampaigns(campaigns, "iphone");
+        List<Campaign> androidCampaigns = new AdminServlet().filterCampaigns(campaigns, "android");
+        Mockito.when(mockRequest.getParameter("platforms")).thenReturn("iphone");
+
+        new AdminServlet().displayAllCampaigns(mockRequest, mockResponse);
+        String output = responseWriter.toString();
+
+        for (Campaign c : iphoneCampaigns) {
+            assertTrue(output.contains(String.valueOf(c.id)));
+            assertTrue(output.contains(c.name));
+            assertTrue(output.contains(c.redirectURL));
+        }
+        Platform iphonePlatform = ObjectifyService.ofy().load().type(Platform.class).filter("name", "iphone").first()
+                .now();
+
+        for (Campaign c : androidCampaigns) {
+            // one of the campaigns contains both android, iphone, so we are
+            // filtering it out with this line
+            if (c.platforms.contains(iphonePlatform.id)) {
+                assertTrue(output.contains(c.name));
+            } else {
+                assertTrue(!output.contains(c.name));
+            }
+        }
+    }
+
     // testing if platforms in datastore are displayed when calling
     // displayAllPlatforms function
     @Test
@@ -144,7 +277,7 @@ public class AdminServletTest {
     // => easier to track specific error
     @Test
     public void filterCampaigns_Test() throws IOException {
-        List<Campaign> campaigns = TestUtils.createDummyCampaigns(); // create 4 campaigns
+        List<Campaign> campaigns = TestUtils.createTestCampaigns(); // create 4 campaigns
         Platform android = ObjectifyService.ofy().load().type(Platform.class).filter("name", "android").first().now();
         Platform iphone = ObjectifyService.ofy().load().type(Platform.class).filter("name", "iphone").first().now();
 
@@ -186,7 +319,7 @@ public class AdminServletTest {
     // testing deleteCampaign function
     @Test
     public void deleteCampaign_Test() throws IOException {
-        List<Campaign> campaigns = TestUtils.createDummyCampaigns();
+        List<Campaign> campaigns = TestUtils.createTestCampaigns();
         Campaign c1 = campaigns.get(0);
         Admin admin = TestUtils.createAdmin(); // creates admin user
         // make checkCredentials function happy
@@ -205,8 +338,8 @@ public class AdminServletTest {
 
     // testing delete campaign when admin is not logged in (session does not exist)
     @Test
-    public void deleteCampaign_nosession_Test() throws IOException {
-        List<Campaign> campaigns = TestUtils.createDummyCampaigns();
+    public void deleteCampaign_notLoggedIn_Test() throws IOException {
+        List<Campaign> campaigns = TestUtils.createTestCampaigns();
         Campaign c1 = campaigns.get(0);
         Admin admin = TestUtils.createAdmin();
         // no session
@@ -220,7 +353,7 @@ public class AdminServletTest {
     // testing delete campaign when the campaign id does not exist in db
     @Test
     public void deleteCampaign_missingCampaignID_Test() throws IOException {
-        List<Campaign> campaigns = TestUtils.createDummyCampaigns();
+        List<Campaign> campaigns = TestUtils.createTestCampaigns();
         Campaign c1 = campaigns.get(0);
         Admin admin = TestUtils.createAdmin();
 
@@ -238,7 +371,7 @@ public class AdminServletTest {
     // testing doPut function, if campaign fields are updated correctly
     @Test
     public void updateCampaign_Test() throws IOException {
-        List<Campaign> campaigns = TestUtils.createDummyCampaigns();
+        List<Campaign> campaigns = TestUtils.createTestCampaigns();
         Campaign c1 = campaigns.get(0);
         String c1Name = c1.name;
         String c1URL = c1.redirectURL;

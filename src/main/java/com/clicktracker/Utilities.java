@@ -41,6 +41,9 @@ public class Utilities {
     // - name of the platform (ex: "iphone, android")
     //
     // both inputs are checked against the database to ensure the input data is valid
+    //
+    // returns: list of platform ids that are representing string argument
+    // ex: argument: "android", returns [2132133] // id of platform with name = android
     public static List<Long> getPlatforms(String platformsString) throws IOException {
         String[] platforms = platformsString.split(",");
         List<Long> platformIDS = new ArrayList<Long>();

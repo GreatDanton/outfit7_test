@@ -29,7 +29,7 @@ import com.google.gson.JsonElement;
 // /api/v1/admin/campaign/{campaignID/all/platform}
 //
 // Actions are executed depending on the type of request:
-// GET: get additional info about campaigns
+// GET: get additional info about campaign/campaigns
 // POST: create new campaign
 // PUT: update existing campaign
 // DELETE: delete campaign

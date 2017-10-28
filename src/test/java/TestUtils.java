@@ -24,7 +24,7 @@ public class TestUtils {
 
     // helper function to create campaigns with different
     // arguments
-    public static List<Campaign> createDummyCampaigns() {
+    public static List<Campaign> createTestCampaigns() {
         List<Platform> platforms = createPlatforms();
         Platform android = platforms.get(0);
         Platform iphone = platforms.get(1);
