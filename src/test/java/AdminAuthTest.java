@@ -73,17 +73,10 @@ public class AdminAuthTest {
         this.helper.tearDown();
     }
 
-    // helper function for creating admin in test functions
-    public static Admin createAdmin() {
-        Admin admin = new Admin("admin", "1234", true);
-        ObjectifyService.ofy().save().entity(admin).now();
-        return admin;
-    }
-
     // test credentialsCheck function on correct name & password
     @Test
     public void credentialsCheckTest() throws IOException {
-        Admin admin = createAdmin();
+        Admin admin = TestUtils.createAdmin();
         // admin, 1234 are original admin name, password
         Mockito.when(mockRequest.getParameter("name")).thenReturn("admin");
         Mockito.when(mockRequest.getParameter("password")).thenReturn("1234");
@@ -96,7 +89,7 @@ public class AdminAuthTest {
     // test checkCredentials function when wrong admin password is used
     @Test
     public void credentialsWrongPasswordTest() throws IOException {
-        Admin admin = createAdmin();
+        Admin admin = TestUtils.createAdmin();
         Mockito.when(mockRequest.getParameter("name")).thenReturn("admin");
         // wrong password
         Mockito.when(mockRequest.getParameter("password")).thenReturn("321");
@@ -108,7 +101,7 @@ public class AdminAuthTest {
     // test checkCredentials function when wrong admin username is used
     @Test
     public void credentialsWrongUsernameTest() throws IOException {
-        Admin admin = createAdmin();
+        Admin admin = TestUtils.createAdmin();
         // wrong name
         Mockito.when(mockRequest.getParameter("name")).thenReturn("_admin");
         Mockito.when(mockRequest.getParameter("password")).thenReturn("1234");
@@ -120,7 +113,7 @@ public class AdminAuthTest {
     // check admin login function when the password is correct
     @Test
     public void loginTest() throws IOException {
-        Admin admin = createAdmin();
+        Admin admin = TestUtils.createAdmin();
         Mockito.when(mockRequest.getPathInfo()).thenReturn("/login");
         Mockito.when(mockRequest.getParameter("name")).thenReturn("admin");
         Mockito.when(mockRequest.getParameter("password")).thenReturn("1234");
@@ -137,7 +130,7 @@ public class AdminAuthTest {
     // check admin login when wrong password is used
     @Test
     public void loginTest_wrongPassword() throws IOException {
-        Admin admin = createAdmin();
+        Admin admin = TestUtils.createAdmin();
         Mockito.when(mockRequest.getPathInfo()).thenReturn("/login");
         Mockito.when(mockRequest.getParameter("name")).thenReturn("admin");
         Mockito.when(mockRequest.getParameter("password")).thenReturn("321");

@@ -77,50 +77,10 @@ public class AdminServletTest {
         this.helper.tearDown();
     }
 
-    // helper function to create campaigns with different
-    // arguments
-    public List<Campaign> createDummyCampaigns() {
-        List<Platform> platforms = createPlatforms();
-        Platform android = platforms.get(0);
-        Platform iphone = platforms.get(1);
-        List<Long> both = new ArrayList<Long>();
-        both.add(android.id);
-        both.add(iphone.id);
-
-        List<Long> androidOnly = new ArrayList<Long>();
-        androidOnly.add(android.id);
-
-        List<Long> iphoneOnly = new ArrayList<Long>();
-        iphoneOnly.add(iphone.id);
-
-        Campaign c1 = new Campaign("My first campaign", "http://www.myfirstcampaign.com", both, true, new Date());
-        Campaign c2 = new Campaign("My second campaign", "http://www.mysecondcampaign.com", androidOnly, true,
-                new Date());
-        Campaign c3 = new Campaign("My third campaign", "http://www.mythirdcampaign.com", androidOnly, false,
-                new Date());
-        Campaign c4 = new Campaign("My fourth campaign", "http://www.myfourthcampaign.com", iphoneOnly, true,
-                new Date());
-
-        List<Campaign> allCampaigns = Arrays.asList(c1, c2, c3, c4);
-        ObjectifyService.ofy().save().entities(c1, c2, c3, c4).now();
-        return allCampaigns;
-    }
-
-    // helper function to create android, iphone, platforms
-    public List<Platform> createPlatforms() {
-        Platform p1 = new Platform("android");
-        Platform p2 = new Platform("iphone");
-        ObjectifyService.ofy().save().entities(p1, p2).now();
-        List<Platform> platforms = new ArrayList<Platform>();
-        platforms.add(p1);
-        platforms.add(p2);
-        return platforms;
-    }
-
     // tests checkCredentials helper function (if admin is logged in).
     @Test
     public void checkCredentialsTest() throws IOException {
-        Admin admin = AdminAuthTest.createAdmin(); // creates admin user
+        Admin admin = TestUtils.createAdmin(); // creates admin user
         HttpSession session = Mockito.mock(HttpSession.class);
         Mockito.when(mockRequest.getSession(false)).thenReturn(session);
         Mockito.when(session.getAttribute("adminID")).thenReturn(admin.id);
@@ -134,7 +94,7 @@ public class AdminServletTest {
     // check credentials when the client has forged
     @Test
     public void checkCredentials_wrongID_Test() throws IOException {
-        Admin admin = AdminAuthTest.createAdmin();
+        Admin admin = TestUtils.createAdmin();
         HttpSession session = Mockito.mock(HttpSession.class);
         Mockito.when(mockRequest.getSession(false)).thenReturn(session);
         // using wrong admin id
@@ -167,7 +127,7 @@ public class AdminServletTest {
         assertTrue(output.contains("iphone"));
     }
 
-    // testing if only one platform exists in db
+    // testing displayAllPlatforms function
     @Test
     public void displayAllPlatforms_Test2() throws IOException {
         Platform p = new Platform("android");
@@ -184,7 +144,7 @@ public class AdminServletTest {
     // => easier to track specific error
     @Test
     public void filterCampaigns_Test() throws IOException {
-        List<Campaign> campaigns = createDummyCampaigns(); // create 4 campaigns
+        List<Campaign> campaigns = TestUtils.createDummyCampaigns(); // create 4 campaigns
         Platform android = ObjectifyService.ofy().load().type(Platform.class).filter("name", "android").first().now();
         Platform iphone = ObjectifyService.ofy().load().type(Platform.class).filter("name", "iphone").first().now();
 
@@ -223,11 +183,12 @@ public class AdminServletTest {
         assertNull(nullCampaign);
     }
 
+    // testing deleteCampaign function
     @Test
     public void deleteCampaign_Test() throws IOException {
-        List<Campaign> campaigns = createDummyCampaigns();
+        List<Campaign> campaigns = TestUtils.createDummyCampaigns();
         Campaign c1 = campaigns.get(0);
-        Admin admin = AdminAuthTest.createAdmin(); // creates admin user
+        Admin admin = TestUtils.createAdmin(); // creates admin user
         // make checkCredentials function happy
         HttpSession session = Mockito.mock(HttpSession.class);
         Mockito.when(mockRequest.getSession(false)).thenReturn(session);
@@ -242,11 +203,12 @@ public class AdminServletTest {
         assertNull(deletedCampaign);
     }
 
+    // testing delete campaign when admin is not logged in (session does not exist)
     @Test
     public void deleteCampaign_nosession_Test() throws IOException {
-        List<Campaign> campaigns = createDummyCampaigns();
+        List<Campaign> campaigns = TestUtils.createDummyCampaigns();
         Campaign c1 = campaigns.get(0);
-        Admin admin = AdminAuthTest.createAdmin();
+        Admin admin = TestUtils.createAdmin();
         // no session
         Mockito.when(mockRequest.getPathInfo()).thenReturn("/" + String.valueOf(c1.id));
         // delete without session should fail
@@ -255,11 +217,12 @@ public class AdminServletTest {
         assertTrue(output.contains("Forbidden"));
     }
 
+    // testing delete campaign when the campaign id does not exist in db
     @Test
     public void deleteCampaign_missingCampaignID_Test() throws IOException {
-        List<Campaign> campaigns = createDummyCampaigns();
+        List<Campaign> campaigns = TestUtils.createDummyCampaigns();
         Campaign c1 = campaigns.get(0);
-        Admin admin = AdminAuthTest.createAdmin();
+        Admin admin = TestUtils.createAdmin();
 
         HttpSession session = Mockito.mock(HttpSession.class);
         Mockito.when(mockRequest.getSession(false)).thenReturn(session);
@@ -272,16 +235,17 @@ public class AdminServletTest {
         assertTrue(output.contains("does not exist"));
     }
 
+    // testing doPut function, if campaign fields are updated correctly
     @Test
     public void updateCampaign_Test() throws IOException {
-        List<Campaign> campaigns = createDummyCampaigns();
+        List<Campaign> campaigns = TestUtils.createDummyCampaigns();
         Campaign c1 = campaigns.get(0);
         String c1Name = c1.name;
         String c1URL = c1.redirectURL;
         Boolean c1Active = c1.active;
         Date c1createdAt = c1.createdAt;
 
-        Admin admin = AdminAuthTest.createAdmin();
+        Admin admin = TestUtils.createAdmin();
         HttpSession session = Mockito.mock(HttpSession.class);
         Mockito.when(mockRequest.getSession(false)).thenReturn(session);
         Mockito.when(session.getAttribute("adminID")).thenReturn(admin.id);
@@ -304,5 +268,4 @@ public class AdminServletTest {
         assertNotEquals(c1Name, updatedCampaign.name);
         assertNotEquals(c1URL, updatedCampaign.redirectURL);
     }
-
 }
