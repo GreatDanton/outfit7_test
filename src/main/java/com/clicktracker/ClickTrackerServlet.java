@@ -145,7 +145,7 @@ public class ClickTrackerServlet extends HttpServlet {
         // to insert new counter on each campaign insert)
         if (counter == null) {
             Counter newCounter = new Counter(campaignID, 1L);
-            ObjectifyService.ofy().save().entity(newCounter);
+            ObjectifyService.ofy().save().entity(newCounter).now();
             return;
         }
 
