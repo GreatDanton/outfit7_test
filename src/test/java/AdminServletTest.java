@@ -144,7 +144,6 @@ public class AdminServletTest {
         new AdminServlet().doGet(mockRequest, mockResponse);
 
         String output = responseWriter.toString();
-        assertTrue(output.contains("403"));
         assertTrue(output.contains("Forbidden"));
     }
 
@@ -505,7 +504,6 @@ public class AdminServletTest {
 
         new AdminServlet().doPost(mockRequest, mockResponse);
         String output = responseWriter.toString();
-        assertTrue(output.contains("403"));
         assertTrue(output.contains("Forbidden"));
     }
 }

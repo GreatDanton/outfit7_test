@@ -102,7 +102,6 @@ public class ClickTrackerServlet extends HttpServlet {
         JsonObject json = new JsonObject();
         Gson gson = new Gson();
         json.add("message", gson.toJsonTree("This campaign does not exist"));
-        json.add("statusCode", gson.toJsonTree(404));
         json.add("redirectURL", gson.toJsonTree(mainWebsite));
         out.print(json);
         out.flush();

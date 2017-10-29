@@ -164,8 +164,6 @@ public class ClickTrackerTest {
         }
 
         String data = responseWriter.toString();
-        assertTrue(data.contains("statusCode"));
-        assertTrue(data.contains("404"));
         assertTrue(data.contains("http://www.outfit7.com"));
     }
 

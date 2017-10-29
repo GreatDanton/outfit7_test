@@ -360,7 +360,6 @@ public class AdminServlet extends HttpServlet {
         PrintWriter out = resp.getWriter();
         Gson gson = new Gson();
         JsonObject msg = new JsonObject();
-        msg.add("statusCode", gson.toJsonTree(404));
         msg.add("message", gson.toJsonTree(errorMsg));
         out.print(new Gson().toJson(msg));
         out.flush();
@@ -375,7 +374,6 @@ public class AdminServlet extends HttpServlet {
         PrintWriter out = resp.getWriter();
         Gson gson = new Gson();
         JsonObject msg = new JsonObject();
-        msg.add("statusCode", gson.toJsonTree(400));
         msg.add("message", gson.toJsonTree(errorMsg));
         out.print(msg);
         out.flush();
@@ -390,7 +388,6 @@ public class AdminServlet extends HttpServlet {
         PrintWriter out = resp.getWriter();
         JsonObject json = new JsonObject();
         Gson gson = new Gson();
-        json.add("statusCode", gson.toJsonTree(403));
         json.add("message", gson.toJsonTree("Forbidden"));
         out.print(json);
         out.flush();

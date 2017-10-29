@@ -129,7 +129,6 @@ public class AdminAuthServlet extends HttpServlet {
         Gson gson = new Gson();
         JsonObject json = new JsonObject();
         json.add("message", gson.toJsonTree("Bad request"));
-        json.add("statusCode", gson.toJsonTree(400));
         out.print(json);
         out.flush();
     }

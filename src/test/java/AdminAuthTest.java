@@ -168,6 +168,5 @@ public class AdminAuthTest {
 
         String data = responseWriter.toString();
         assertTrue(data.contains("Bad request"));
-        assertTrue(data.contains("400"));
     }
 }
