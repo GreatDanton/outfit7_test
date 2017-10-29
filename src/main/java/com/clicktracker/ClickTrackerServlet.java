@@ -47,6 +47,11 @@ public class ClickTrackerServlet extends HttpServlet {
             return;
         }
 
+        if (!c.active) {
+            handleGet404(resp);
+            return;
+        }
+
         // store client click in db
         storeClick(req);
 
@@ -68,6 +73,11 @@ public class ClickTrackerServlet extends HttpServlet {
         // check if id from url exists in database
         Campaign c = getCampaign(campaignID);
         if (c == null) {
+            handlePost404(resp);
+            return;
+        }
+
+        if (!c.active) {
             handlePost404(resp);
             return;
         }
