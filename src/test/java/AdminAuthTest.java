@@ -75,7 +75,7 @@ public class AdminAuthTest {
 
     // test credentialsCheck function on correct name & password
     @Test
-    public void credentialsCheckTest() throws IOException {
+    public void credentialsCheck_Test() throws IOException {
         Admin admin = TestUtils.createAdmin();
         // admin, 1234 are original admin name, password
         Mockito.when(mockRequest.getParameter("name")).thenReturn("admin");
@@ -88,7 +88,7 @@ public class AdminAuthTest {
 
     // test checkCredentials function when wrong admin password is used
     @Test
-    public void credentialsWrongPasswordTest() throws IOException {
+    public void credentialsCheck_wrongPassword_Test() throws IOException {
         Admin admin = TestUtils.createAdmin();
         Mockito.when(mockRequest.getParameter("name")).thenReturn("admin");
         // wrong password
@@ -100,7 +100,7 @@ public class AdminAuthTest {
 
     // test checkCredentials function when wrong admin username is used
     @Test
-    public void credentialsWrongUsernameTest() throws IOException {
+    public void credentialsCheck_wrongUsername_Test() throws IOException {
         Admin admin = TestUtils.createAdmin();
         // wrong name
         Mockito.when(mockRequest.getParameter("name")).thenReturn("_admin");
@@ -160,7 +160,7 @@ public class AdminAuthTest {
     // check logout if session is not present
     // - it should return bad request json message
     @Test
-    public void logoutTest_NoSession() throws IOException {
+    public void logoutTest_noSession() throws IOException {
         Mockito.when(mockRequest.getPathInfo()).thenReturn("/logout");
         // we simulate client that is not logged in
         Mockito.when(mockRequest.getSession(false)).thenReturn(null);

@@ -1,10 +1,8 @@
 package com.clicktracker.model;
 
-import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
 import com.googlecode.objectify.annotation.Index;
-import com.googlecode.objectify.annotation.Parent;
 import org.mindrot.jbcrypt.BCrypt;
 
 // Create table for admin
@@ -24,7 +22,6 @@ public class Admin {
     public Admin() {
     }
 
-    // Admin storing data?
     public Admin(String name, String password, Boolean active) {
         this.name = name;
         // hash password

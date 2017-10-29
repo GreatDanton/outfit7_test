@@ -1,10 +1,8 @@
 package com.clicktracker.model;
 
-import com.googlecode.objectify.Key;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
 import com.googlecode.objectify.annotation.Index;
-import com.googlecode.objectify.annotation.Parent;
 import com.googlecode.objectify.annotation.Cache;
 
 // custom imports

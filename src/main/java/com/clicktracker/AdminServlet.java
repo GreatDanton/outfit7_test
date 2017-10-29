@@ -26,7 +26,9 @@ import com.google.gson.JsonElement;
 // AdminServlet handles admin pages => adding, deleting, updating and getting
 // info about campaigns.
 // We can access admin pages via
-// /api/v1/admin/campaign/{campaignID/all/platform}
+//      /api/v1/admin/campaign/{campaignID/all/platform}
+//
+//      /api/v1/admin/campaign/all?active=true&platforms=android
 //
 // Actions are executed depending on the type of request:
 // GET: get additional info about campaign/campaigns

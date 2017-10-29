@@ -11,7 +11,6 @@ import com.googlecode.objectify.ObjectifyService;
 
 // custom imports
 import java.io.PrintWriter;
-import java.util.List;
 import java.util.StringTokenizer;
 import com.clicktracker.model.Campaign;
 import com.clicktracker.model.Click;

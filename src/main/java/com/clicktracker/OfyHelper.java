@@ -16,14 +16,10 @@
 //[START all]
 package com.clicktracker;
 
-import com.googlecode.objectify.Objectify;
-import com.googlecode.objectify.ObjectifyFactory;
 import com.googlecode.objectify.ObjectifyService;
 
 import javax.servlet.ServletContextListener;
-
 import javax.servlet.ServletContextEvent;
-import org.mindrot.jbcrypt.BCrypt;
 
 // json imports
 import com.clicktracker.model.Campaign;
@@ -57,6 +53,8 @@ public class OfyHelper implements ServletContextListener {
 
         ObjectifyService.begin();
 
+        // 1 admin, 2 platforms and one campaign is created when the
+        // software is started (if they do not exist already).
         registerAdmin();
         createPlatforms();
         createCampaign();

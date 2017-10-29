@@ -10,7 +10,6 @@ import com.googlecode.objectify.ObjectifyService;
 // custom imports
 import java.io.PrintWriter;
 import java.io.IOException;
-import java.util.List;
 import com.clicktracker.model.Admin;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
@@ -20,6 +19,10 @@ import org.mindrot.jbcrypt.BCrypt;
 // which happens via post request on:
 //
 // /api/v1/admin/auth/{login/logout}
+//
+// NOTE: login/logout is handled directly inside method, since there is not
+// that much code for handling that. In case of longer functions we could
+// separate that in separate functions / classes.
 public class AdminAuthServlet extends HttpServlet {
 
     @Override

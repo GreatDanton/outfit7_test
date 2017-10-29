@@ -2,9 +2,6 @@ import com.google.appengine.tools.development.testing.LocalDatastoreServiceTestC
 import com.google.appengine.tools.development.testing.LocalServiceTestHelper;
 import com.googlecode.objectify.ObjectifyFactory;
 import com.googlecode.objectify.ObjectifyService;
-import com.googlecode.objectify.annotation.Entity;
-import com.googlecode.objectify.annotation.Id;
-import com.googlecode.objectify.annotation.Index;
 import com.googlecode.objectify.cache.AsyncCacheFilter;
 import com.googlecode.objectify.util.Closeable;
 
@@ -26,6 +23,7 @@ import java.util.ArrayList;
 import com.clicktracker.model.Platform;
 import com.clicktracker.Utilities;
 
+// UtilitiesTest is testing utility functions inside Utilities.java file.
 public class UtilitiesTest {
     private final LocalServiceTestHelper helper = new LocalServiceTestHelper(new LocalDatastoreServiceTestConfig());
     protected Closeable session;
@@ -51,7 +49,7 @@ public class UtilitiesTest {
     }
 
     @Test
-    public void getURLEndingTest() throws IOException {
+    public void getURLEnding_Test() throws IOException {
         HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
         // pathInfo returns just the last part of the url
         // /api/v1/admin => returns /admin
@@ -62,7 +60,7 @@ public class UtilitiesTest {
     }
 
     @Test
-    public void getCampaignIDTest() throws IOException {
+    public void getCampaignID_Test() throws IOException {
         HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
         // campaign ID:
         Mockito.when(request.getPathInfo()).thenReturn("/1234567890");
@@ -72,7 +70,7 @@ public class UtilitiesTest {
     }
 
     @Test
-    public void stringToLongTest() throws IOException {
+    public void stringToLong_Test() throws IOException {
         Long id = Utilities.stringToLong("123");
         Long expectedID = 123L;
         assertEquals(expectedID, id);
@@ -83,7 +81,7 @@ public class UtilitiesTest {
     }
 
     @Test
-    public void getPlatformsTest() throws IOException {
+    public void getPlatforms_Test() throws IOException {
         Platform p1 = new Platform("iphone");
         Platform p2 = new Platform("android");
         ObjectifyService.ofy().save().entity(p1).now();

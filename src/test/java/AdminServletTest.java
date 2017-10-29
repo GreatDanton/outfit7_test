@@ -27,10 +27,8 @@ import java.io.IOException;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.Arrays;
 
 import com.clicktracker.AdminServlet;
-import com.clicktracker.Utilities;
 // custom imports
 import com.clicktracker.model.Campaign;
 import com.clicktracker.model.Platform;
@@ -80,7 +78,7 @@ public class AdminServletTest {
 
     // tests checkCredentials helper function (if admin is logged in).
     @Test
-    public void checkCredentialsTest() throws IOException {
+    public void checkCredentials_Test() throws IOException {
         Admin admin = TestUtils.createAdmin(); // creates admin user
         HttpSession session = Mockito.mock(HttpSession.class);
         Mockito.when(mockRequest.getSession(false)).thenReturn(session);
@@ -92,7 +90,7 @@ public class AdminServletTest {
         assertTrue(loggedIn);
     }
 
-    // check credentials when the client has forged
+    // check credentials when the client has made up cookie
     @Test
     public void checkCredentials_wrongID_Test() throws IOException {
         Admin admin = TestUtils.createAdmin();
@@ -213,7 +211,7 @@ public class AdminServletTest {
         }
     }
 
-    // testing displayAllCampaigns with parameter ?platform=iphone
+    // testing displayAllCampaigns with parameter ex: url/ ?platform=iphone
     @Test
     public void displayAllCampaigns_iphoneOnly_Test() throws IOException {
         List<Campaign> campaigns = TestUtils.createTestCampaigns();
@@ -260,7 +258,8 @@ public class AdminServletTest {
         assertTrue(output.contains("iphone"));
     }
 
-    // testing displayAllPlatforms function
+    // testing displayAllPlatforms function, check if specifying platform
+    // query argument is working as intended
     @Test
     public void displayAllPlatforms_Test2() throws IOException {
         Platform p = new Platform("android");
@@ -274,7 +273,7 @@ public class AdminServletTest {
 
     // testing filterCampaigns function
     // TODO: split this function into multiple smaller functions
-    // => easier to track specific error
+    // => easier to track specific error if it happens
     @Test
     public void filterCampaigns_Test() throws IOException {
         List<Campaign> campaigns = TestUtils.createTestCampaigns(); // create 4 campaigns

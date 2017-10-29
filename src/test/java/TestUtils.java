@@ -8,13 +8,12 @@ import java.util.Arrays;
 // custom imports
 import com.clicktracker.model.Campaign;
 import com.clicktracker.model.Platform;
-import com.clicktracker.model.Counter;
-import com.clicktracker.model.Click;
 import com.clicktracker.model.Admin;
 
 // TestUtils holds helper functions for setting up testing environment
 // used in Unit & Integration tests
 public class TestUtils {
+
     // helper function for creating admin in test functions
     public static Admin createAdmin() {
         Admin admin = new Admin("admin", "1234", true);
@@ -22,8 +21,8 @@ public class TestUtils {
         return admin;
     }
 
-    // helper function to create campaigns with different
-    // arguments
+    // helper function to create campaigns with different arguments
+    // for testing purposes
     public static List<Campaign> createTestCampaigns() {
         List<Platform> platforms = createPlatforms();
         Platform android = platforms.get(0);

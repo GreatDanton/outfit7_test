@@ -33,7 +33,7 @@ import com.clicktracker.model.Platform;
 import com.clicktracker.model.Counter;
 import com.clicktracker.model.Click;
 
-// ClickTrackerTest is used to test ClickTrackerServlet
+// ClickTrackerTest is used to test ClickTrackerServlet in com. folder
 public class ClickTrackerTest {
     private final LocalServiceTestHelper helper = new LocalServiceTestHelper(new LocalDatastoreServiceTestConfig());
     protected Closeable session;
@@ -89,7 +89,7 @@ public class ClickTrackerTest {
     // testing client get request on campaign id that do exist in db
     // - client should be redirected to redirectURL in db
     @Test
-    public void doGetTest() throws IOException {
+    public void doGet_Test() throws IOException {
         createTestCampaign();
         Campaign c = ObjectifyService.ofy().load().type(Campaign.class).first().now();
         Mockito.when(mockRequest.getPathInfo()).thenReturn("/" + String.valueOf(c.id));
@@ -104,7 +104,7 @@ public class ClickTrackerTest {
     // testing client get request on the campaign id that do not exist
     // client should be redirected to default redirect url (outfit7.com);
     @Test
-    public void doGetTest404() throws IOException {
+    public void doGetTest_404() throws IOException {
         createTestCampaign();
         Mockito.when(mockRequest.getPathInfo()).thenReturn("/nonExistentCampaignID");
         new ClickTrackerServlet().doGet(mockRequest, mockResponse);
@@ -118,7 +118,7 @@ public class ClickTrackerTest {
     // - check if client gets correct redirectURL in response
     // - check if counting clicks is working correctly
     @Test
-    public void doPostTest() throws IOException {
+    public void doPost_Test() throws IOException {
         // create platform table and campaign table
         createTestCampaign();
         Campaign c = ObjectifyService.ofy().load().type(Campaign.class).first().now();
@@ -138,25 +138,24 @@ public class ClickTrackerTest {
         Long expectedNumOfClicks = 1L;
         assertEquals(expectedNumOfClicks, new Long(dbClickNum));
 
-        // check if counter number is the same as expected number of clicks
-        Counter counter = ObjectifyService.ofy().load().type(Counter.class).filter("campaignID", c.id).first().now();
-        assertEquals(expectedNumOfClicks, counter.numOfClicks);
-
         // creating new post mockRequest, check if number of clicks match
         // 2 == 2
         new ClickTrackerServlet().doPost(mockRequest, mockResponse);
         expectedNumOfClicks++;
         // check numbers from db again
         Integer dbClickNum2 = ObjectifyService.ofy().load().type(Click.class).filter("campaignID", c.id).count();
-        Counter counter2 = ObjectifyService.ofy().load().type(Counter.class).filter("campaignID", c.id).first().now();
         assertEquals(expectedNumOfClicks, new Long(dbClickNum2));
-        assertEquals(expectedNumOfClicks, counter2.numOfClicks);
+
+        // check if counter numbers match with expected number of clicks
+        // ie: 2 == 2
+        Counter counter = ObjectifyService.ofy().load().type(Counter.class).filter("campaignID", c.id).first().now();
+        assertEquals(expectedNumOfClicks, counter.numOfClicks);
     }
 
     // check post request on campaign id that does not exist
     // client should get default redirectURL (www.outfit7.com) in json response
     @Test
-    public void doPost404() throws IOException {
+    public void doPost_404() throws IOException {
         Mockito.when(mockRequest.getPathInfo()).thenReturn("/nonExistentCampaignID");
         new ClickTrackerServlet().doPost(mockRequest, mockResponse);
         Click click = ObjectifyService.ofy().load().type(Click.class).first().now();
@@ -172,7 +171,7 @@ public class ClickTrackerTest {
 
     // check if storeClick function is counting clicks correctly
     @Test
-    public void storeClickTest() throws IOException {
+    public void storeClick_Test() throws IOException {
         // save platform in platform table
         Platform p = new Platform("android");
         ObjectifyService.ofy().save().entity(p).now();
