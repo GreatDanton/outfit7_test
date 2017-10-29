@@ -132,19 +132,38 @@ public class ClickTrackerTest {
         assertTrue(data.contains("redirectURL"));
         assertTrue(data.contains(c.redirectURL));
 
+        // Sleeping for one second prevents test to fail randomly
+        // Adding clicks in db occurs in async way which leads us to situation
+        // where expectedNumberOfClicks is not the same as the actual number
+        // of clicks in db (by deffering assertEquals we ensure the click will
+        // be added to db before we assert the number of actual clicks in db)
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
+        }
+
+        Long expectedNumOfClicks = 1L;
         // check if number of rows in click table is the same as expected
         // 1 == 1
-        Integer dbClickNum = ObjectifyService.ofy().load().type(Click.class).filter("campaignID", c.id).count();
-        Long expectedNumOfClicks = 1L;
-        assertEquals(expectedNumOfClicks, new Long(dbClickNum));
+        List<Click> dbClickArr = ObjectifyService.ofy().load().type(Click.class).filter("campaignID", c.id).list();
+        assertEquals(expectedNumOfClicks, new Long(dbClickArr.size()));
 
         // creating new post mockRequest, check if number of clicks match
         // 2 == 2
         new ClickTrackerServlet().doPost(mockRequest, mockResponse);
+
+        // same as above
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
+        }
+
         expectedNumOfClicks++;
         // check numbers from db again
-        Integer dbClickNum2 = ObjectifyService.ofy().load().type(Click.class).filter("campaignID", c.id).count();
-        assertEquals(expectedNumOfClicks, new Long(dbClickNum2));
+        List<Click> dbClickArr2 = ObjectifyService.ofy().load().type(Click.class).filter("campaignID", c.id).list();
+        assertEquals(expectedNumOfClicks, new Long(dbClickArr2.size()));
 
         // check if counter numbers match with expected number of clicks
         // ie: 2 == 2
