@@ -10,9 +10,9 @@ import com.clicktracker.model.Campaign;
 import com.clicktracker.model.Platform;
 import com.clicktracker.model.Admin;
 
-// TestUtils holds helper functions for setting up testing environment
+// SetupUtils holds helper functions for setting up testing environment
 // used in Unit & Integration tests
-public class TestUtils {
+public class SetupUtils {
 
     // helper function for creating admin in test functions
     public static Admin createAdmin() {

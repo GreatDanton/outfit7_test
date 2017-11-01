@@ -79,7 +79,7 @@ public class AdminServletTest {
     // tests checkCredentials helper function (if admin is logged in).
     @Test
     public void checkCredentials_Test() throws IOException {
-        Admin admin = TestUtils.createAdmin(); // creates admin user
+        Admin admin = SetupUtils.createAdmin(); // creates admin user
         HttpSession session = Mockito.mock(HttpSession.class);
         Mockito.when(mockRequest.getSession(false)).thenReturn(session);
         Mockito.when(session.getAttribute("adminID")).thenReturn(admin.id);
@@ -93,7 +93,7 @@ public class AdminServletTest {
     // check credentials when the client has made up cookie
     @Test
     public void checkCredentials_wrongID_Test() throws IOException {
-        Admin admin = TestUtils.createAdmin();
+        Admin admin = SetupUtils.createAdmin();
         HttpSession session = Mockito.mock(HttpSession.class);
         Mockito.when(mockRequest.getSession(false)).thenReturn(session);
         // using wrong admin id
@@ -115,8 +115,8 @@ public class AdminServletTest {
     // api/v1/campaign/{campaignID}
     @Test
     public void doGet_specificCampaign_Test() throws IOException {
-        Admin admin = TestUtils.createAdmin();
-        List<Campaign> campaigns = TestUtils.createTestCampaigns();
+        Admin admin = SetupUtils.createAdmin();
+        List<Campaign> campaigns = SetupUtils.createTestCampaigns();
         Campaign c1 = campaigns.get(0);
 
         HttpSession session = Mockito.mock(HttpSession.class);
@@ -135,8 +135,8 @@ public class AdminServletTest {
     // missing session test - admin is not logged in
     @Test
     public void doGet_notLoggedIn_Test() throws IOException {
-        Admin admin = TestUtils.createAdmin();
-        List<Campaign> campaigns = TestUtils.createTestCampaigns();
+        Admin admin = SetupUtils.createAdmin();
+        List<Campaign> campaigns = SetupUtils.createTestCampaigns();
         Campaign c1 = campaigns.get(0);
         // not providing session
         Mockito.when(mockRequest.getPathInfo()).thenReturn("/" + String.valueOf(c1.id));
@@ -150,8 +150,8 @@ public class AdminServletTest {
     // simulate api/v1/campaign/all click
     @Test
     public void doGet_displayAllCampaigns_Test() throws IOException {
-        Admin admin = TestUtils.createAdmin();
-        List<Campaign> campaigns = TestUtils.createTestCampaigns();
+        Admin admin = SetupUtils.createAdmin();
+        List<Campaign> campaigns = SetupUtils.createTestCampaigns();
         HttpSession session = Mockito.mock(HttpSession.class);
         Mockito.when(mockRequest.getSession(false)).thenReturn(session);
         Mockito.when(mockRequest.getPathInfo()).thenReturn("/all");
@@ -169,7 +169,7 @@ public class AdminServletTest {
     // testing just displayAllCampaigns function
     @Test
     public void displayAllCampaigns_Test() throws IOException {
-        List<Campaign> campaigns = TestUtils.createTestCampaigns();
+        List<Campaign> campaigns = SetupUtils.createTestCampaigns();
         Mockito.when(mockRequest.getPathInfo()).thenReturn("/all");
         new AdminServlet().displayAllCampaigns(mockRequest, mockResponse);
         String output = responseWriter.toString();
@@ -183,7 +183,7 @@ public class AdminServletTest {
     // testing displayAllCampaigns, with parameter ?active=false
     @Test
     public void displayAllCampaigns_nonActiveOnly_Test() throws IOException {
-        List<Campaign> campaigns = TestUtils.createTestCampaigns();
+        List<Campaign> campaigns = SetupUtils.createTestCampaigns();
         List<Campaign> activeCampaignIDS = new ArrayList<Campaign>();
         List<Campaign> nonActiveCampaignIDS = new ArrayList<Campaign>();
         // add created campaigns to relevant arrays
@@ -213,7 +213,7 @@ public class AdminServletTest {
     // testing displayAllCampaigns with parameter ex: url/ ?platform=iphone
     @Test
     public void displayAllCampaigns_iphoneOnly_Test() throws IOException {
-        List<Campaign> campaigns = TestUtils.createTestCampaigns();
+        List<Campaign> campaigns = SetupUtils.createTestCampaigns();
         // filterCampaigns function is tested below, so we can be sure it
         // filters correctly, otherwise test below will fail
         List<Campaign> iphoneCampaigns = new AdminServlet().filterCampaigns(campaigns, "iphone");
@@ -275,7 +275,7 @@ public class AdminServletTest {
     // => easier to track specific error if it happens
     @Test
     public void filterCampaigns_Test() throws IOException {
-        List<Campaign> campaigns = TestUtils.createTestCampaigns(); // create 4 campaigns
+        List<Campaign> campaigns = SetupUtils.createTestCampaigns(); // create 4 campaigns
         Platform android = ObjectifyService.ofy().load().type(Platform.class).filter("name", "android").first().now();
         Platform iphone = ObjectifyService.ofy().load().type(Platform.class).filter("name", "iphone").first().now();
 
@@ -317,9 +317,9 @@ public class AdminServletTest {
     // testing deleteCampaign function
     @Test
     public void deleteCampaign_Test() throws IOException {
-        List<Campaign> campaigns = TestUtils.createTestCampaigns();
+        List<Campaign> campaigns = SetupUtils.createTestCampaigns();
         Campaign c1 = campaigns.get(0);
-        Admin admin = TestUtils.createAdmin(); // creates admin user
+        Admin admin = SetupUtils.createAdmin(); // creates admin user
         // make checkCredentials function happy
         HttpSession session = Mockito.mock(HttpSession.class);
         Mockito.when(mockRequest.getSession(false)).thenReturn(session);
@@ -337,9 +337,9 @@ public class AdminServletTest {
     // testing delete campaign when admin is not logged in (session does not exist)
     @Test
     public void deleteCampaign_notLoggedIn_Test() throws IOException {
-        List<Campaign> campaigns = TestUtils.createTestCampaigns();
+        List<Campaign> campaigns = SetupUtils.createTestCampaigns();
         Campaign c1 = campaigns.get(0);
-        Admin admin = TestUtils.createAdmin();
+        Admin admin = SetupUtils.createAdmin();
         // no session
         Mockito.when(mockRequest.getPathInfo()).thenReturn("/" + String.valueOf(c1.id));
         // delete without session should fail
@@ -351,9 +351,9 @@ public class AdminServletTest {
     // testing delete campaign when the campaign id does not exist in db
     @Test
     public void deleteCampaign_missingCampaignID_Test() throws IOException {
-        List<Campaign> campaigns = TestUtils.createTestCampaigns();
+        List<Campaign> campaigns = SetupUtils.createTestCampaigns();
         Campaign c1 = campaigns.get(0);
-        Admin admin = TestUtils.createAdmin();
+        Admin admin = SetupUtils.createAdmin();
 
         HttpSession session = Mockito.mock(HttpSession.class);
         Mockito.when(mockRequest.getSession(false)).thenReturn(session);
@@ -369,14 +369,14 @@ public class AdminServletTest {
     // testing doPut function, if campaign fields are updated correctly
     @Test
     public void updateCampaign_Test() throws IOException {
-        List<Campaign> campaigns = TestUtils.createTestCampaigns();
+        List<Campaign> campaigns = SetupUtils.createTestCampaigns();
         Campaign c1 = campaigns.get(0);
         String c1Name = c1.name;
         String c1URL = c1.redirectURL;
         Boolean c1Active = c1.active;
         Date c1createdAt = c1.createdAt;
 
-        Admin admin = TestUtils.createAdmin();
+        Admin admin = SetupUtils.createAdmin();
         HttpSession session = Mockito.mock(HttpSession.class);
         Mockito.when(mockRequest.getSession(false)).thenReturn(session);
         Mockito.when(session.getAttribute("adminID")).thenReturn(admin.id);
@@ -403,13 +403,13 @@ public class AdminServletTest {
     // test if admin is able to create campaign
     @Test
     public void createCampaign_Test() throws IOException {
-        Admin admin = TestUtils.createAdmin();
+        Admin admin = SetupUtils.createAdmin();
         // create platforms in db
         String name = "My campaign name";
         String redirectURL = "http://mycampaign.com";
         Boolean active = true;
         // create platforms
-        TestUtils.createPlatforms();
+        SetupUtils.createPlatforms();
 
         // simulate session
         HttpSession session = Mockito.mock(HttpSession.class);
@@ -439,11 +439,11 @@ public class AdminServletTest {
     // testing createCampaign when we have missing parameter
     @Test
     public void createCampaign_missingParameter_Test() throws IOException {
-        Admin admin = TestUtils.createAdmin();
+        Admin admin = SetupUtils.createAdmin();
         // create platforms in db
         String redirectURL = "http://mycampaign.com";
         // create platforms
-        TestUtils.createPlatforms();
+        SetupUtils.createPlatforms();
 
         // simulate session
         HttpSession session = Mockito.mock(HttpSession.class);
@@ -468,11 +468,11 @@ public class AdminServletTest {
     // testing create campaign func when we have empty name parameter
     @Test
     public void createCampaigns_emptyParameter_Test() throws IOException {
-        Admin admin = TestUtils.createAdmin();
+        Admin admin = SetupUtils.createAdmin();
         // create platforms in db
         String redirectURL = "http://mycampaign.com";
         // create platforms
-        TestUtils.createPlatforms();
+        SetupUtils.createPlatforms();
 
         // simulate session
         HttpSession session = Mockito.mock(HttpSession.class);

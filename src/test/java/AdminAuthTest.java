@@ -76,7 +76,7 @@ public class AdminAuthTest {
     // test credentialsCheck function on correct name & password
     @Test
     public void credentialsCheck_Test() throws IOException {
-        Admin admin = TestUtils.createAdmin();
+        Admin admin = SetupUtils.createAdmin();
         // admin, 1234 are original admin name, password
         Mockito.when(mockRequest.getParameter("name")).thenReturn("admin");
         Mockito.when(mockRequest.getParameter("password")).thenReturn("1234");
@@ -89,7 +89,7 @@ public class AdminAuthTest {
     // test checkCredentials function when wrong admin password is used
     @Test
     public void credentialsCheck_wrongPassword_Test() throws IOException {
-        Admin admin = TestUtils.createAdmin();
+        Admin admin = SetupUtils.createAdmin();
         Mockito.when(mockRequest.getParameter("name")).thenReturn("admin");
         // wrong password
         Mockito.when(mockRequest.getParameter("password")).thenReturn("321");
@@ -101,7 +101,7 @@ public class AdminAuthTest {
     // test checkCredentials function when wrong admin username is used
     @Test
     public void credentialsCheck_wrongUsername_Test() throws IOException {
-        Admin admin = TestUtils.createAdmin();
+        Admin admin = SetupUtils.createAdmin();
         // wrong name
         Mockito.when(mockRequest.getParameter("name")).thenReturn("_admin");
         Mockito.when(mockRequest.getParameter("password")).thenReturn("1234");
@@ -113,7 +113,7 @@ public class AdminAuthTest {
     // check admin login function when the password is correct
     @Test
     public void loginTest() throws IOException {
-        Admin admin = TestUtils.createAdmin();
+        Admin admin = SetupUtils.createAdmin();
         Mockito.when(mockRequest.getPathInfo()).thenReturn("/login");
         Mockito.when(mockRequest.getParameter("name")).thenReturn("admin");
         Mockito.when(mockRequest.getParameter("password")).thenReturn("1234");
@@ -130,7 +130,7 @@ public class AdminAuthTest {
     // check admin login when wrong password is used
     @Test
     public void loginTest_wrongPassword() throws IOException {
-        Admin admin = TestUtils.createAdmin();
+        Admin admin = SetupUtils.createAdmin();
         Mockito.when(mockRequest.getPathInfo()).thenReturn("/login");
         Mockito.when(mockRequest.getParameter("name")).thenReturn("admin");
         Mockito.when(mockRequest.getParameter("password")).thenReturn("321");
